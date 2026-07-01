@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+
+# HPN Server pre-removal script
+# Stops the service before uninstall.
+
+if systemctl is-active --quiet hpn-server.service 2>/dev/null; then
+    echo "HPN: Stopping hpn-server..."
+    systemctl stop hpn-server.service
+fi
+
+if systemctl is-enabled --quiet hpn-server.service 2>/dev/null; then
+    systemctl disable hpn-server.service > /dev/null 2>&1 || true
+fi

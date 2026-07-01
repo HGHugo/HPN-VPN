@@ -1,0 +1,5 @@
+{
+  "name": "HPN Desktop Client",
+  "description": "A post-quantum VPN desktop client interface featuring a strict dark theme and glassmorphism design.",
+  "requestFramePermissions": []
+}

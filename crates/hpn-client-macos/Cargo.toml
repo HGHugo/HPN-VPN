@@ -1,0 +1,55 @@
+[package]
+name = "hpn-client-macos"
+description = "HPN VPN client for macOS"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+publish = false
+
+[features]
+default = []
+# Compile the legacy CLI crash-recovery module. Off by default because the
+# Tauri/NetworkExtension build does NOT need it: the system tears the tunnel
+# down cleanly when the app dies, so there is no host-level state (PF rules,
+# routes) to restore from a recovery file. Enable this feature only when
+# building a standalone CLI client that manipulates routes/PF directly.
+cli-recovery = ["dep:serde", "dep:serde_json"]
+
+# Compile the legacy CLI DNS-management module (FIX-026). It calls
+# `scutil --set State:/Network/...` which only works when the process
+# runs as root, and the Tauri/NetworkExtension shipping build does not
+# use it (the extension hands DNS to macOS through `NEDNSSettings`).
+# Gated off by default so a regression cannot accidentally invoke the
+# root-only code path from a non-elevated host process.
+cli-dns = []
+
+[dependencies]
+hpn-core = { workspace = true }
+hpn-client-core = { workspace = true }
+
+# Async runtime
+tokio = { workspace = true }
+async-trait = { workspace = true }
+
+# Networking - tun-rs (re-exported as `tun` by the workspace alias, so the
+# whole workspace imports the utun/Wintun wrapper under the same name and
+# the same pinned version on every platform).
+tun = { workspace = true }
+
+# Serialization (recovery state — only needed for the cli-recovery feature).
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+
+# Error handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Unix privilege checking
+libc = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+
+[lints]
+workspace = true

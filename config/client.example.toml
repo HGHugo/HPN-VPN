@@ -1,0 +1,103 @@
+# HPN VPN Client Configuration
+
+# Server address (IP:port or hostname:port)
+# This is the primary UDP address
+server_addr = "vpn.example.com:51820"
+
+# Server public key (base64 encoded ML-DSA-65 public key)
+# Get this from the server administrator
+server_public_key = ""
+
+# Keepalive interval in seconds
+# Sends keepalive packets to maintain the connection through NAT
+keepalive_interval_secs = 25
+
+# Connection timeout in seconds
+# How long to wait for handshake response
+connection_timeout_secs = 30
+
+# Rekey interval in seconds
+# How often to rotate encryption keys (for forward secrecy)
+rekey_interval_secs = 3600
+
+# Maximum bytes before triggering rekey
+# Forces key rotation after this many bytes transferred
+# Default: 64 GB (68719476736 bytes)
+rekey_after_bytes = 68719476736
+
+# Number of missed keepalives before considering connection dead
+keepalive_timeout_count = 3
+
+# Enable automatic reconnection on connection loss
+auto_reconnect = true
+
+# Maximum reconnection attempts (0 = unlimited)
+max_reconnect_attempts = 5
+
+# Reconnect delay in seconds (with exponential backoff)
+reconnect_delay_secs = 5
+
+# Enable kill switch (block all traffic when VPN is down)
+# SECURITY: This should always be enabled in production to prevent traffic leaks
+kill_switch = true
+
+# Allow LAN traffic when kill switch is active
+allow_lan = true
+
+# Enable DNS leak protection
+dns_leak_protection = true
+
+# Split tunnel mode (false = full tunnel, true = split tunnel)
+split_tunnel = false
+
+# Routes for split tunneling (CIDR notation)
+# Only used when split_tunnel = true
+# split_routes = ["10.0.0.0/8", "192.168.0.0/16"]
+# split_routes_v6 = ["fd00::/8"]
+
+# ============================================================================
+# TCP/443 Fallback Configuration
+# ============================================================================
+# When UDP is blocked (e.g., restrictive corporate networks, some public WiFi),
+# the client can automatically fall back to TCP/443 which mimics HTTPS traffic.
+# This has higher latency than UDP but works in most restricted networks.
+# ============================================================================
+
+# Enable TCP/443 fallback when UDP is blocked
+tcp_fallback = false
+
+# TCP fallback server address (typically port 443)
+# If not specified, uses server_addr IP with port 443
+# tcp_fallback_addr = "vpn.example.com:443"
+
+# Number of UDP failures before switching to TCP fallback
+tcp_fallback_threshold = 3
+
+# ============================================================================
+# Post-Quantum Cryptography Configuration
+# ============================================================================
+# Security level for cryptographic operations:
+#   "level3" (default) - ML-KEM-768 + ML-DSA-65 (~AES-192 equivalent security)
+#   "level5"           - ML-KEM-1024 + ML-DSA-87 (~AES-256 equivalent, enterprise)
+#
+# IMPORTANT: The server must support the requested security level.
+# If the server only supports Level 3 and you request Level 5, the connection
+# will fail. Check with your server administrator.
+#
+# Level 5 provides stronger post-quantum security but increases handshake size.
+# Recommendation: Match your server's security_level setting.
+security_level = "level3"
+
+# ============================================================================
+# Identity Hiding (Optional, Privacy Enhancement)
+# ============================================================================
+# If the server provides a KEM public key, you can enable identity hiding.
+# This encrypts your handshake initiation message so passive observers
+# cannot fingerprint your client based on its ephemeral public key.
+#
+# Get this key from your server administrator. It should match your
+# security_level setting (Level 3 or Level 5).
+#
+# Format: Base64-encoded Hybrid ML-KEM public key (~1622 chars for L3, ~2134 for L5)
+# ============================================================================
+# server_kem_public_key = ""

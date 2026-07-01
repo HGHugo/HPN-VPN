@@ -1,0 +1,26 @@
+[package]
+name = "hpn-tunnel-ext"
+description = "HPN VPN Packet Tunnel Extension FFI bridge (macOS staticlib)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+publish = false
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+hpn-core = { workspace = true }
+hpn-client-core = { workspace = true }
+
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+parking_lot = { workspace = true }
+crossbeam-channel = { workspace = true }
+zeroize = { workspace = true }
+
+[lints]
+workspace = true

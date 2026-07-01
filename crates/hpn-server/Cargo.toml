@@ -1,0 +1,132 @@
+[package]
+name = "hpn-server"
+description = "HPN VPN server for Linux"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+publish = false
+
+[features]
+default = ["io_uring"]
+# Enable io_uring for higher throughput (requires Linux kernel >= 5.6).
+# This is enabled by default on Linux for maximum performance.
+# Disable with --no-default-features if running on older kernels.
+#
+# The feature now conditionally pulls in the `io-uring` crate via
+# `dep:io-uring` instead of linking it unconditionally. When the feature
+# is OFF, the crate is not compiled or linked — saving a transitive
+# dependency, shrinking binary size on older-kernel builds, and making
+# the feature flag actually meaningful for supply-chain review.
+io_uring = ["dep:io-uring"]
+# Enable AF_XDP for zero-copy networking (requires Linux kernel >= 4.18)
+# This provides kernel-bypass networking for maximum throughput (10+ Gbps).
+# Requires: CAP_NET_ADMIN or root, NIC with XDP support for zero-copy.
+afxdp = ["hpn-afxdp"]
+
+[dependencies]
+hpn-core = { workspace = true }
+
+# Async runtime
+tokio = { workspace = true }
+async-trait = { workspace = true }
+
+# Networking
+tun = { workspace = true }
+socket2 = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+toml = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+# CLI
+clap = { workspace = true }
+
+# Utilities
+parking_lot = { workspace = true }
+base64 = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+ring = { workspace = true }
+subtle = { workspace = true }
+rand = { workspace = true }
+
+# High-performance concurrency
+crossbeam-channel = { workspace = true }
+dashmap = { workspace = true }
+bytes = { workspace = true }
+
+# Cache-line padding for hot atomics in `udp_workers::WorkerStats` and
+# `afxdp_workers::AfXdpPoolStats`. Without `CachePadded`, separate counters
+# (packets_received, bytes_received, …) end up on the same 64-byte line and
+# every cross-core update triggers an MESI invalidation cascade — measurable
+# as an 8 % throughput drop under multi-worker load.
+crossbeam-utils = "0.8"
+
+# HTTP (for metrics endpoint)
+hyper = { workspace = true }
+hyper-util = { workspace = true }
+http-body-util = { workspace = true }
+
+# User authentication (SQLite + Argon2)
+rusqlite = { version = "0.31", features = ["bundled"] }
+argon2 = "0.5"
+rpassword = "7"
+
+# Platform-specific - Unix (Linux, macOS, BSD)
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+# Linux-specific (io_uring, AF_XDP). Both are now gated by their feature
+# flags so `--no-default-features` produces a binary with neither crate
+# compiled nor linked.
+[target.'cfg(target_os = "linux")'.dependencies]
+io-uring = { workspace = true, optional = true }
+hpn-afxdp = { path = "../hpn-afxdp", optional = true }
+
+# `mimalloc` global allocator (Linux + macOS). The default glibc malloc
+# is a notable bottleneck under our multi-threaded UDP-worker + per-
+# session-state + `Bytes::copy_from_slice` workload (control messages,
+# AF_XDP fast-path fallback, etc.); mimalloc's per-thread arenas remove
+# that contention and field measurements show +10-25 % multi-thread
+# throughput on x86-64 servers without changing a single line of
+# allocation code. `default-features = false` keeps mimalloc from
+# overriding the system malloc symbols — we wire it explicitly via
+# `#[global_allocator]` in `main.rs` so the change is opt-in and only
+# affects allocations made through Rust's `std`.
+[target.'cfg(target_os = "linux")'.dependencies.mimalloc]
+version = "0.1"
+default-features = false
+
+[target.'cfg(target_os = "macos")'.dependencies.mimalloc]
+version = "0.1"
+default-features = false
+
+[dev-dependencies]
+proptest = "1.4"
+criterion = { workspace = true }
+# Used directly by the `data_plane` bench's local `LocalStats` mirror of
+# `WorkerStats`. Already a runtime dep above; declared here too because
+# `[dev-dependencies]` is a separate crate dep set when criterion runs
+# the bench harness as a stand-alone binary.
+crossbeam-utils = "0.8"
+
+[[bench]]
+# Data-plane micro-benchmarks: header decode + AES-GCM decrypt +
+# `WorkerStats` updates. Captures the cumulative cost of the per-
+# packet hot path so the Tier 2 perf patch (target-cpu, mimalloc,
+# CPU pinning, CachePadded) can be measured A/B from real numbers.
+name = "data_plane"
+harness = false
+
+[lints]
+workspace = true

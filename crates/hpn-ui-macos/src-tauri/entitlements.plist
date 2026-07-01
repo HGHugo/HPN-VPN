@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Entitlements applied to the host app binary at codesign time by
+  `deploy/macos-release.sh` (and `deploy/macos-dev-test.sh` for local
+  dev builds). The Packet Tunnel Extension has its own entitlements
+  baked in at Xcode build time (see
+  `xcode-native/macos/packet-tunnel/packet_tunnel.entitlements`); the
+  two files MUST stay in sync wherever they overlap (App Group,
+  Keychain access group, Network Extension role) or the extension
+  will fail to start at runtime with errSecItemNotFound or
+  NEVPNStatusInvalid.
+
+  Source of truth: this file. Whenever a capability is added to the
+  Xcode `macos.entitlements`, mirror it here.
+-->
+<plist version="1.0">
+<dict>
+    <!--
+      ===============================================================
+      com.apple.application-identifier and com.apple.developer.team-identifier
+      ===============================================================
+      Both keys are MANDATORY for Developer ID-distributed apps that
+      bundle a System Extension on macOS Tahoe (26.4+). Xcode's
+      signing flow injects them automatically from the provisioning
+      profile, but our release pipeline signs via
+      `codesign --entitlements <plist>` from the command line, which
+      takes the plist verbatim — so we must declare them explicitly
+      here.
+
+      Without these two keys, sysextd silently rejects the activation
+      request and emits the misleading log line
+          "no policy, cannot allow apps outside /Applications"
+      while the actual failure code reported to the host app is
+      OSSystemExtensionErrorDomain code=4 "Extension not found in
+      App bundle". Diagnose by comparing
+          codesign -d --entitlements - "/Applications/HPN VPN.app"
+      against any working third-party Network Extension host app
+      (e.g. Radio Silence, NextDNS, Little Snitch). The two missing
+      keys are the giveaway.
+
+      Substitution at codesign time:
+        $(AppIdentifierPrefix)               → "6Y986MRM6T."  (with dot)
+        $(TeamIdentifierPrefix:rfc1034identifier) → "6Y986MRM6T"  (no dot)
+      The release pipeline performs both substitutions before passing
+      the file to codesign because codesign(1) does not do
+      build-variable substitution itself.
+    -->
+    <key>com.apple.application-identifier</key>
+    <string>$(AppIdentifierPrefix)io.hpn.vpn.macos</string>
+
+    <!--
+      ===============================================================
+      com.apple.developer.system-extension.install (MANDATORY)
+      ===============================================================
+      MANDATORY entitlement on the HOST APP for any process that calls
+      `OSSystemExtensionRequest.activationRequest()`. Without it,
+      sysextd silently rejects the activation request and logs the
+      misleading line "no policy, cannot allow apps outside
+      /Applications" — even on a fully notarised, stapled, correctly-
+      structured app installed in /Applications.
+
+      Apple's documentation
+      https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.developer.system-extension.install
+      states this entitlement is required for ALL system extension
+      types, NOT only Mac App Store apps. Confirmed empirically: Radio
+      Silence (signed with `Developer ID Application: Juuso Salonen`)
+      ships with this entitlement set to true and its System Extension
+      activates correctly on macOS Tahoe Developer ID.
+
+      The matching App ID at developer.apple.com MUST have the
+      "System Extension" capability ticked (separate from Network
+      Extensions) and the provisioning profile MUST be regenerated
+      after the App ID change. Otherwise `codesign` will fail with
+      "Provisioning profile doesn't match the entitlements file's
+      value for com.apple.developer.system-extension.install".
+    -->
+    <key>com.apple.developer.system-extension.install</key>
+    <true/>
+
+    <!--
+      com.apple.developer.team-identifier is INJECTED by the release
+      pipeline AFTER sed substitution (via PlistBuddy); do NOT
+      add it here. Xcode rejects in-IDE builds if it sees any literal
+      team-identifier in the source plist before validating against
+      the provisioning profile. See the same comment block in
+      `xcode-native/macos/packet-tunnel/packet_tunnel.entitlements`
+      for the full rationale.
+    -->
+
+    <!--
+      App Sandbox is INTENTIONALLY DISABLED for the host app.
+      Apple requires apps that call `OSSystemExtensionRequest` to
+      activate a System Extension to be unsandboxed (or to hold
+      the special-grant `com.apple.developer.system-extension.install`
+      entitlement, which Apple grants to Mac App Store distribution
+      only). On Developer ID, the sandbox restriction silently
+      blocks the activation request — the host app gets stuck on
+      `userApprovalRequired` forever and the user sees nothing in
+      System Settings → Privacy & Security.
+      The extension itself remains sandboxed (see
+      `xcode-native/macos/packet-tunnel/packet_tunnel.entitlements`),
+      which is best practice for Network Extensions.
+      Notarisation does NOT require the host app to be sandboxed —
+      Hardened Runtime (codesign --options runtime) is what notary
+      checks, and that is unaffected by the sandbox flag.
+    -->
+
+    <!--
+      Outbound network access for the host app's UI (license check,
+      updater plugin, Tauri devtools when in debug). The extension
+      has its own network.client + network.server in
+      packet_tunnel.entitlements.
+    -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+
+    <!--
+      Network Extension capability — required to bundle a Packet
+      Tunnel Provider as a System Extension inside the app. Apple
+      forced the migration from the legacy `.appex` "App Extension"
+      mode (`packet-tunnel-provider`) to the modern `.systemextension`
+      "System Extension" mode (`packet-tunnel-provider-systemextension`)
+      for any App ID created in Developer ID distribution mode in
+      2023+. The matching App ID at developer.apple.com MUST have the
+      "Network Extensions" capability enabled, with the "Packet Tunnel
+      (System Extension)" sub-checkbox ticked.
+
+      Functional differences vs the legacy App Extension mode:
+      - Bundle path: Contents/Library/SystemExtensions/*.systemextension
+        (instead of Contents/PlugIns/*.appex)
+      - User must explicitly approve the extension in System Settings
+        → Privacy & Security → "Allow" the first time the app calls
+        OSSystemExtensionRequest. Subsequent launches reuse the
+        approval until the user revokes it.
+      - The host app MUST call `OSSystemExtensionRequest.activationRequest`
+        before NETunnelProviderManager can find the extension. See
+        `VPNManager.swift::ensureSystemExtensionActivated`.
+    -->
+    <key>com.apple.developer.networking.networkextension</key>
+    <array>
+        <string>packet-tunnel-provider-systemextension</string>
+    </array>
+
+    <!--
+      VPN API access — required for the host app to use
+      `NETunnelProviderManager` to install / start / stop the VPN
+      profile in the system. Without this entitlement,
+      `loadFromPreferences` returns NEVPNErrorConfigurationDisabled
+      and the VPN cannot be installed at all.
+    -->
+    <key>com.apple.developer.networking.vpn.api</key>
+    <array>
+        <string>allow-vpn</string>
+    </array>
+
+    <!--
+      App Group used for IPC with the Packet Tunnel Extension. The
+      shared App Group container holds the `provider-config.json`
+      file (now wrapped in the audit-H15 HMAC envelope) and the
+      `tunnel-stats.json` file written by the extension and read by
+      the host app. The matching App IDs at developer.apple.com
+      MUST have "App Groups" capability enabled and `group.io.hpn.vpn`
+      registered under Identifiers → App Groups.
+    -->
+    <key>com.apple.security.application-groups</key>
+    <array>
+        <string>group.io.hpn.vpn</string>
+    </array>
+
+    <!--
+      Shared Keychain access group used to pass:
+       1. The VPN password from the host app to the extension
+          (audit CRED-1; never written to disk in `provider-config.json`).
+       2. The 32-byte master HMAC key for the audit-H15 provider-
+          config envelope.
+
+      Xcode prepends the team identifier at codesign time, so the
+      effective access group at runtime is `6Y986MRM6T.io.hpn.vpn`
+      (or whatever the current Team ID is — keep this string as
+      `$(AppIdentifierPrefix)io.hpn.vpn` so a future team rotation
+      does not require touching the source file).
+
+      The `packet_tunnel.entitlements` MUST list the SAME group, or
+      `SecItemCopyMatching` from the extension returns
+      errSecItemNotFound and the tunnel cannot authenticate.
+    -->
+    <key>keychain-access-groups</key>
+    <array>
+        <string>$(AppIdentifierPrefix)io.hpn.vpn</string>
+    </array>
+</dict>
+</plist>

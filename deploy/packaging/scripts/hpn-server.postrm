@@ -1,0 +1,46 @@
+#!/bin/bash
+set -e
+
+# HPN Server post-removal script
+# Only cleans up on purge (not on simple remove)
+
+case "$1" in
+    purge)
+        # Remove config files
+        rm -rf /etc/hpn/server.toml /etc/hpn/server.toml.example
+
+        # Remove data (keypairs, user db)
+        rm -rf /var/lib/hpn
+
+        # Remove sysctl tuning
+        rm -f /etc/sysctl.d/99-hpn-vpn.conf
+        sysctl --system > /dev/null 2>&1 || true
+
+        # Remove journald config
+        rm -f /etc/systemd/journald.conf.d/hpn.conf
+        systemctl restart systemd-journald 2>/dev/null || true
+
+        # Remove empty config dir if no relay installed
+        if [ ! -f /etc/hpn/relay.toml ] && [ ! -f /etc/hpn/relay.toml.example ]; then
+            rmdir /etc/hpn 2>/dev/null || true
+        fi
+
+        # Remove system user (only if no relay using it)
+        if ! dpkg -l hpn-relay 2>/dev/null | grep -q "^ii"; then
+            userdel hpn 2>/dev/null || true
+            groupdel hpn 2>/dev/null || true
+        fi
+
+        echo "HPN: Server configuration and data purged"
+        ;;
+
+    remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+        # Nothing to do on simple remove
+        ;;
+
+    *)
+        echo "postrm called with unknown argument '$1'" >&2
+        ;;
+esac
+
+exit 0

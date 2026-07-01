@@ -1,0 +1,50 @@
+[package]
+name = "hpn-client-windows"
+description = "HPN VPN client for Windows"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+hpn-core = { workspace = true }
+hpn-client-core = { workspace = true }
+
+# Async runtime
+tokio = { workspace = true }
+async-trait = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+
+[target.'cfg(windows)'.dependencies]
+wintun = "0.5"
+uuid = { workspace = true }
+fs2 = "0.4"  # File locking for recovery file
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_NetworkManagement_IpHelper",
+    "Win32_NetworkManagement_Ndis",
+    "Win32_NetworkManagement_WindowsFilteringPlatform",
+    "Win32_Networking_WinSock",
+    "Win32_Security",
+    "Win32_Security_Authorization",
+    "Win32_Security_Cryptography",
+    "Win32_Security_WinTrust",
+    "Win32_System_ProcessStatus",
+    "Win32_System_Registry",
+    "Win32_System_Rpc",
+    "Win32_System_Threading",
+] }
+
+[lints]
+workspace = true

@@ -1,0 +1,138 @@
+# Rust build artifacts
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment and secrets
+.env
+.env.local
+*.pem
+*.key
+server-keys.toml
+
+# License master keys (NEVER commit private key!)
+master-private-key.hex
+master-public-key.hex
+*private_key*.hex
+*secret_key*.hex
+
+# Logs
+*.log
+logs/
+
+# Test artifacts
+*.profraw
+coverage/
+
+# Fuzzing artifacts
+fuzz/target/
+fuzz/corpus/
+fuzz/artifacts/
+fuzz/coverage/
+fuzz/*.profraw
+
+# Wintun DLL (download separately)
+wintun.dll
+
+# Node.js
+**/node_modules/
+node_modules/
+package-lock.json
+**/package-lock.json
+
+# Frontend build output
+**/dist/
+dist/
+
+# Tauri build artifacts
+**/src-tauri/target/
+**/WixTools/
+
+# Backup files
+*.bak
+*.backup
+*.tmp
+*~.nib
+
+# macOS specific
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# Thumbnail cache
+.Spotlight-V100
+.Trashes
+
+# Development databases
+*.db
+*.sqlite
+*.sqlite3
+
+# ck semantic search index (can be rebuilt)
+.ck/
+.grepai/
+
+# macOS Xcode build artifacts
+crates/hpn-ui-macos/xcode/build/
+crates/hpn-ui-macos/xcode/build-containing-app/
+crates/hpn-ui-macos/xcode/*.xcodeproj/
+crates/hpn-ui-macos/native/*.a
+
+# Symbiotic Security - Security Rules (auto-generated)
+.github/instructions/symbiotic_security_rules.instructions.md
+
+# Xcode user state
+crates/hpn-ui-macos/xcode-native/macos/macos.xcodeproj/xcuserdata/
+crates/hpn-ui-macos/xcode-native/macos/macos.xcodeproj/project.xcworkspace/xcuserdata/
+.playwright-mcp/
+crates/hpn-ui-macos/xcode-native/macos/build/
+
+# Internal audit reports & ops runbooks — never commit
+RapportAudiAFaire.md
+Rapport*.md
+RAPPORT*
+SECURITY_AUDIT_*.md
+SECURITY_AUDIT_RECONCILIATION.md
+FIX_PLAN.md
+instructions/OPERATIONS.md
+
+# Local screenshots (e.g. opencode Playwright captures of HPN-Web)
+screenshots/
+
+# AI tooling / internal (not for public repo)
+.claude/
+.mcp.json
+.ckignore
+AGENTS.md
+
+# GitLab CI (public repo uses GitHub Actions in .github/workflows/)
+.gitlab-ci.yml
+
+# Internal planning / audit docs
+docs/LICENSE_SYSTEM.md
+docs/PLAN_REMEDIATION_RUST_VPN_PQ.md
+docs/REMEDIATION_FINAL_REPORT.md
+security-footer-*.png
+deploy/HPN-VPN-Video-Brief.html
+
+# Personal PII / regulatory filings (owner paperwork, not open-source content)
+deploy/anssi-crypto-declaration.*
+
+# Internal commercial-licensing runbook (contradicts AGPL model)
+BUILD_INSTRUCTIONS.md
+
+# Apple provisioning profiles / signing identity (build artifacts)
+*.provisionprofile
+crates/hpn-ui-macos/profiles/

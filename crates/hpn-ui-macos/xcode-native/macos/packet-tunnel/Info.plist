@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Minimum macOS version for the Packet Tunnel Extension.
+	     Must match the host app's 14.0 floor (see
+	     src-tauri/Info.plist and tauri.conf.json): the host relies on
+	     the NetworkExtension `includeAllNetworks` flag introduced in
+	     macOS 14 to enforce the kill switch. Loading this extension on
+	     macOS 13 would silently disable that flag and leave the user
+	     unprotected. Refuse the load entirely instead. -->
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+
+	<!-- ============================================================
+	     NSSystemExtensionUsageDescription (MANDATORY on the EXTENSION)
+	     ============================================================
+	     sysextd's "validating_by_category" stage REQUIRES this key in
+	     the extension's Info.plist for any bundle in the
+	     com.apple.system_extension.network_extension category. Without
+	     it, sysextd rejects the activation with
+	         "extension failed category property check: extensions
+	          belonging to the com.apple.system_extension.network_extension
+	          category require the presence of the
+	          'NSSystemExtensionUsageDescription' property"
+	     and uninstalls the staged bundle (visible in `log stream
+	     --predicate 'process == "sysextd"'`).
+	     The host app's `NSSystemExtensionUsageDescription` (in
+	     src-tauri/Info.plist) is a SEPARATE key that controls the
+	     System Settings → Privacy & Security prompt text. The
+	     extension's key is checked by sysextd as a structural
+	     requirement; its STRING VALUE is unused at runtime (Apple's
+	     own samples and Radio Silence ship with an empty string).
+	     We use a non-empty string here so a static analyser /
+	     localiser does not flag it.  -->
+	<key>NSSystemExtensionUsageDescription</key>
+	<string>HPN VPN Packet Tunnel Provider</string>
+
+	<!-- ============================================================
+	     System Extension metadata (Tahoe-correct format)
+	     ============================================================
+	     macOS reads the top-level `NetworkExtension` dict to identify
+	     the Network Extension provider classes and the Mach service
+	     name used for XPC between the host app and the extension.
+	     This is REQUIRED for `.systemextension` bundles (Developer ID
+	     System Extensions). The legacy `NSExtension` dict that App
+	     Extensions (`.appex`) use is IGNORED by sysextd.
+
+	     CRITICAL: NEMachServiceName MUST be prefixed by one of the
+	     app groups declared in `com.apple.security.application-groups`.
+	     This is enforced by sysextd's "validating_by_category" stage
+	     and surfaces as
+	         NetworkExtensionErrorDomain Code=6
+	         "valeur de la clé NEMachServiceName doit avoir comme
+	          préfixe l'un des groupes d'apps du droit
+	          com.apple.security.application-groups"
+	     when violated. Apple convention (verified on Radio Silence,
+	     Little Snitch, NextDNS): use the form
+	         <app-group-name>.<arbitrary-suffix>
+	     so the prefix-match check passes AND the mach service is
+	     uniquely named per provider.
+
+	     Our app group is `group.io.hpn.vpn` (declared in
+	     packet_tunnel.entitlements + macos.entitlements). The mach
+	     service name is therefore `group.io.hpn.vpn.packet-tunnel`
+	     (app group + role suffix).
+
+	     `NEProviderClasses` maps Network Extension provider points
+	     (e.g. `com.apple.networkextension.packet-tunnel`) to the
+	     principal Swift class implementing that provider. We only
+	     ship a Packet Tunnel Provider, so a single mapping is required.
+	     The class name is `<module>.<class>` — module is the Swift
+	     target's PRODUCT_MODULE_NAME (`io_hpn_vpn_macos_packet_tunnel`,
+	     dot-to-underscore-substituted from the bundle id since the
+	     PRODUCT_NAME bundle-id-match fix), class is `PacketTunnelProvider`.
+	     -->
+	<key>NetworkExtension</key>
+	<dict>
+		<key>NEMachServiceName</key>
+		<string>group.io.hpn.vpn.packet-tunnel</string>
+		<key>NEProviderClasses</key>
+		<dict>
+			<key>com.apple.networkextension.packet-tunnel</key>
+			<string>$(PRODUCT_MODULE_NAME).PacketTunnelProvider</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

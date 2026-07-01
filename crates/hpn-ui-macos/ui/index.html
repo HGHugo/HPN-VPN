@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HPN VPN</title>
+    <style>
+      /* Prevent white flash on load - apply immediately */
+      html, body, #root {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+      }
+      html.dark, html.dark body, html.dark #root {
+        background-color: #09090b;
+        color: #e4e4e7;
+      }
+      html:not(.dark), html:not(.dark) body, html:not(.dark) #root {
+        background-color: #fafafa;
+        color: #18181b;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
+  </body>
+</html>

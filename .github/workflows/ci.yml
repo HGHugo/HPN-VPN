@@ -1,0 +1,254 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  check:
+    name: Check & Format
+    runs-on: [self-hosted, linux, X64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check formatting
+        run: cargo +stable fmt --all -- --check
+
+      - name: Clippy (Linux crates)
+        run: cargo +stable clippy --release -p hpn-core -p hpn-client-core -p hpn-server -p hpn-relay -- -D warnings
+
+  test-linux:
+    name: Test Linux
+    runs-on: [self-hosted, linux, X64]
+    needs: [check]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run tests (core + server + relay)
+        run: cargo test --release -p hpn-core -p hpn-client-core -p hpn-server -p hpn-relay
+
+  test-macos:
+    name: Test macOS
+    runs-on: [self-hosted, macOS, X64]
+    needs: [check]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run tests (core + client-core + client-macos)
+        run: cargo test --release -p hpn-core -p hpn-client-core -p hpn-client-macos
+
+  test-windows:
+    name: Test Windows
+    runs-on: [self-hosted, Windows, X64]
+    needs: [check]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run tests (core + client-core + client-windows)
+        run: cargo test --release -p hpn-core -p hpn-client-core -p hpn-client-windows
+
+  build-linux:
+    name: Build Linux
+    runs-on: [self-hosted, linux, X64]
+    needs: [test-linux]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Clean build artifacts
+        run: cargo clean
+
+      - name: Build server
+        run: cargo build --release -p hpn-server
+
+      - name: Build relay
+        run: cargo build --release -p hpn-relay
+
+      - name: Upload server binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: hpn-server-linux-amd64
+          path: target/release/hpn-server
+
+      - name: Upload relay binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: hpn-relay-linux-amd64
+          path: target/release/hpn-relay
+
+      - name: Create deployment package
+        run: |
+          chmod +x deploy/package.sh
+          ./deploy/package.sh dist
+
+      - name: Upload deployment package
+        uses: actions/upload-artifact@v4
+        with:
+          name: hpn-server-deployment
+          path: dist/*.tar.gz
+
+  build-macos:
+    name: Build macOS App (Universal)
+    runs-on: [self-hosted, macOS, X64]
+    needs: [test-macos]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Clean build artifacts
+        run: cargo clean
+
+      - name: Add ARM64 target
+        run: rustup target add aarch64-apple-darwin
+
+      - name: Install frontend dependencies
+        working-directory: crates/hpn-ui-macos/ui
+        run: npm install
+
+      - name: Build frontend
+        working-directory: crates/hpn-ui-macos/ui
+        run: npm run build
+
+      - name: Build Tauri app (x86_64)
+        working-directory: crates/hpn-ui-macos
+        run: cargo tauri build --target x86_64-apple-darwin
+
+      - name: Build Tauri app (aarch64)
+        working-directory: crates/hpn-ui-macos
+        run: cargo tauri build --target aarch64-apple-darwin
+
+      - name: Create Universal Binary
+        run: |
+          mkdir -p target/universal/release/bundle
+          # Create universal binary from both architectures
+          lipo -create \
+            target/x86_64-apple-darwin/release/hpn-ui-macos \
+            target/aarch64-apple-darwin/release/hpn-ui-macos \
+            -output target/universal/release/hpn-ui-macos-universal
+
+      - name: Upload macOS x86_64 app
+        uses: actions/upload-artifact@v4
+        with:
+          name: hpn-vpn-macos-x86_64
+          path: |
+            target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
+            target/x86_64-apple-darwin/release/bundle/macos/*.app
+
+      - name: Upload macOS ARM64 app
+        uses: actions/upload-artifact@v4
+        with:
+          name: hpn-vpn-macos-arm64
+          path: |
+            target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+            target/aarch64-apple-darwin/release/bundle/macos/*.app
+
+      - name: Upload Universal Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: hpn-vpn-macos-universal
+          path: target/universal/release/hpn-ui-macos-universal
+
+  build-windows:
+    name: Build Windows App
+    runs-on: [self-hosted, Windows, X64]
+    needs: [test-windows]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Clean build artifacts
+        run: cargo clean
+
+      - name: Download and verify Wintun
+        shell: powershell
+        run: |
+          # Download Wintun 0.14.1
+          $wintunUrl = "https://www.wintun.net/builds/wintun-0.14.1.zip"
+          $wintunHash = "07c256185d6ee3652e09fa55c0b673e2624b565e02c4b9091c79ca7d2f24ef51"
+          $wintunZip = "$env:TEMP\wintun.zip"
+          $wintunDir = "crates/hpn-ui-windows/src-tauri/resources"
+
+          Write-Host "Downloading Wintun..."
+          Invoke-WebRequest -Uri $wintunUrl -OutFile $wintunZip
+
+          # Verify SHA256 checksum before extraction
+          Write-Host "Verifying Wintun checksum..."
+          $actualHash = (Get-FileHash -Path $wintunZip -Algorithm SHA256).Hash.ToLower()
+          if ($actualHash -ne $wintunHash) {
+              Write-Error "Wintun checksum verification failed!"
+              Write-Error "Expected: $wintunHash"
+              Write-Error "Got:      $actualHash"
+              exit 1
+          }
+          Write-Host "Checksum verified: $actualHash"
+
+          Write-Host "Extracting Wintun..."
+          New-Item -ItemType Directory -Force -Path $wintunDir | Out-Null
+          Expand-Archive -Path $wintunZip -DestinationPath "$env:TEMP\wintun" -Force
+
+          # Copy the AMD64 Wintun DLL
+          Copy-Item "$env:TEMP\wintun\wintun\bin\amd64\wintun.dll" "$wintunDir\wintun.dll"
+
+          Write-Host "Wintun DLL copied to $wintunDir"
+          Get-FileHash "$wintunDir\wintun.dll" -Algorithm SHA256
+
+      - name: Install frontend dependencies
+        working-directory: crates/hpn-ui-windows/ui
+        run: npm install
+
+      - name: Build frontend
+        working-directory: crates/hpn-ui-windows/ui
+        run: npm run build
+
+      - name: Build Tauri app
+        working-directory: crates/hpn-ui-windows
+        run: cargo tauri build
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: hpn-vpn-windows-x64
+          path: |
+            target/release/bundle/msi/*.msi
+            target/release/bundle/nsis/*.exe
+
+  benchmark:
+    name: Performance Benchmark
+    runs-on: [self-hosted, linux, X64]
+    needs: [build-linux]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run benchmarks
+        run: cargo bench -p hpn-core
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: target/criterion
+
+  security-audit:
+    name: Security Audit
+    runs-on: [self-hosted, linux, X64]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --quiet
+
+      - name: Run audit
+        run: cargo audit --deny warnings

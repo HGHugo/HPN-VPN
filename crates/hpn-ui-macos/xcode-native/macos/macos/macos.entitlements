@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  com.apple.application-identifier and com.apple.developer.team-identifier
+	  are MANDATORY on Tahoe (26.4+) for Developer ID hosts of System
+	  Extensions; sysextd silently rejects activation otherwise with the
+	  misleading "no policy, cannot allow apps outside /Applications"
+	  log line. Substituted by the release pipeline at codesign time
+	  (Xcode does the substitution automatically in-IDE).
+	-->
+	<key>com.apple.application-identifier</key>
+	<string>$(AppIdentifierPrefix)io.hpn.vpn.macos</string>
+	<!-- MANDATORY for any host app that calls OSSystemExtensionRequest.
+	     Without it, sysextd silently rejects activation. Requires
+	     "System Extension" capability ticked at developer.apple.com
+	     for App ID io.hpn.vpn.macos AND a regenerated provisioning
+	     profile (the existing profile does not carry this entitlement).
+	     See src-tauri/entitlements.plist for full rationale. -->
+	<key>com.apple.developer.system-extension.install</key>
+	<true/>
+	<!-- com.apple.developer.team-identifier is injected at codesign time
+	     by deploy/macos-release.sh (via PlistBuddy) for CLI builds,
+	     or by Xcode automatically for in-IDE builds. Do NOT declare it
+	     here or Xcode rejects the build with a provisioning profile
+	     mismatch. -->
+	<key>com.apple.developer.networking.networkextension</key>
+	<array>
+		<string>packet-tunnel-provider-systemextension</string>
+	</array>
+	<key>com.apple.developer.networking.vpn.api</key>
+	<array>
+		<string>allow-vpn</string>
+	</array>
+	<!--
+	  App Sandbox is INTENTIONALLY DISABLED for the host app:
+	  OSSystemExtensionRequest is blocked by the sandbox on Developer ID
+	  distribution. See src-tauri/entitlements.plist for the full
+	  rationale. The extension's packet_tunnel.entitlements keeps
+	  app-sandbox=true (best practice for Network Extensions, no
+	  conflict because the extension does not call
+	  OSSystemExtensionRequest itself).
+	-->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.io.hpn.vpn</string>
+	</array>
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<!--
+	  Shared Keychain access group used to pass the VPN password from the
+	  containing app to the Packet Tunnel Extension without persisting it
+	  to disk. Xcode prepends the team identifier at codesign time, e.g.
+	  "6Y986MRM6T.io.hpn.vpn". Both the app and the extension MUST list
+	  the SAME group here, otherwise SecItemCopyMatching() in the
+	  extension returns errSecItemNotFound and the tunnel cannot
+	  authenticate.
+	-->
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)io.hpn.vpn</string>
+	</array>
+</dict>
+</plist>

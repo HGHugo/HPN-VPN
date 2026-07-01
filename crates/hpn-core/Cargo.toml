@@ -1,0 +1,56 @@
+[package]
+name = "hpn-core"
+description = "HPN VPN core library - cryptography and protocol"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+# Defense-in-depth against accidental publication. `cargo publish` to any
+# registry (crates.io or a private Artifactory) is refused while this is
+# false. Remove only if `hpn-core` is ever intentionally open-sourced.
+publish = false
+
+[dependencies]
+# Cryptography
+x25519-dalek = { workspace = true }
+pqcrypto-mlkem = { workspace = true }
+pqcrypto-mldsa = { workspace = true }
+pqcrypto-traits = { workspace = true }
+ring = { workspace = true }
+zeroize = { workspace = true }
+rand = { workspace = true }
+subtle = { workspace = true }  # Constant-time comparisons
+
+# Serialization
+serde = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+
+# Utilities
+bitflags = { workspace = true }
+parking_lot = { workspace = true }
+crossbeam-channel = { workspace = true }
+
+# Platform-specific
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+tokio = { workspace = true }
+criterion = { workspace = true }
+proptest = "1.4"
+
+[[bench]]
+name = "crypto_benchmark"
+harness = false
+
+[[bench]]
+name = "protocol_benchmark"
+harness = false
+
+[lints]
+workspace = true

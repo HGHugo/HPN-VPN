@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  ===============================================================
+	  com.apple.application-identifier and com.apple.developer.team-identifier
+	  ===============================================================
+	  Both keys are MANDATORY for Developer ID System Extensions on
+	  macOS Tahoe (26.4+). Xcode's signing flow injects them
+	  automatically from the provisioning profile, but our release
+	  pipeline signs via `codesign --entitlements <plist>` from the
+	  command line, which takes the plist verbatim — so we must
+	  declare them explicitly here.
+
+	  Without these two keys, sysextd silently rejects the activation
+	  request and emits the misleading log line
+	      "no policy, cannot allow apps outside /Applications"
+	  while the actual failure code reported to the host app is
+	  OSSystemExtensionErrorDomain code=4 "Extension not found in
+	  App bundle" — but neither the log line nor the code identifies
+	  the missing-entitlement root cause. The signal is the absence
+	  of these two keys in `codesign -d --entitlements -` output
+	  on the installed bundle (compared against any working third-
+	  party Network Extension System Extension, e.g. Radio Silence).
+
+	  $(AppIdentifierPrefix) is substituted to the 10-character team
+	  identifier (`6Y986MRM6T.`) at codesign time. The release
+	  pipeline (deploy/macos-release.sh) substitutes the placeholder
+	  before passing the file to codesign because codesign(1) does
+	  NOT do build-variable substitution itself.
+	-->
+	<key>com.apple.application-identifier</key>
+	<string>$(AppIdentifierPrefix)io.hpn.vpn.macos.packet-tunnel</string>
+
+	<!--
+	  com.apple.developer.team-identifier is INTENTIONALLY OMITTED
+	  here because Xcode rejects the build with
+	      "Provisioning profile X doesn't match the entitlements
+	       file's value for the com.apple.developer.team-identifier
+	       entitlement"
+	  if any literal value (or unresolved $(TeamIdentifierPrefix:...)
+	  placeholder) appears in the source plist before Xcode validates
+	  it against the chosen provisioning profile. Xcode's signing flow
+	  injects the team identifier automatically from the profile at
+	  the codesign step, so for in-IDE builds the entitlement ends up
+	  on the binary without us having to declare it.
+
+	  For the CLI release pipeline (deploy/macos-release.sh), Xcode
+	  is not in the loop at codesign time — we sign with
+	  `codesign --entitlements <plist>` directly. The release script
+	  injects `com.apple.developer.team-identifier` into the
+	  TEMPORARY substituted plist (not this source file) via
+	  `plutil -replace`, after the sed pass, so the final signature
+	  has the entitlement Apple's notary requires.
+	-->
+
+	<!--
+	  ===============================================================
+	  Sandbox + network access
+	  ===============================================================
+	  The Packet Tunnel Extension MUST be sandboxed for two reasons:
+	    1. Apple notarisation requires Network Extensions to be
+	       sandboxed (rejected otherwise as a security regression).
+	    2. The host app is unsandboxed by necessity (System
+	       Extension activation is silently blocked for sandboxed
+	       Developer ID hosts — see audit notes), but the extension
+	       itself runs the post-quantum AEAD parser on hostile
+	       network input, so sandboxing is non-negotiable defence
+	       in depth.
+	-->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<key>com.apple.security.network.server</key>
+	<true/>
+
+	<!--
+	  ===============================================================
+	  Network Extension role (Packet Tunnel Provider)
+	  ===============================================================
+	  The `-systemextension` suffix is critical: without it, sysextd
+	  treats the bundle as a legacy `.appex` App Extension (which
+	  Apple deprecated for Developer ID distribution in 2023) and
+	  refuses to load it. The role string MUST exactly match the
+	  one declared on the App ID at developer.apple.com — otherwise
+	  the provisioning profile will fail with
+	      "provisioning profile doesn't match the entitlements
+	       file's value for com.apple.developer.networking.networkextension"
+	  at codesign time. See OPERATIONS.md §10 troubleshooting for
+	  the full error matrix.
+	-->
+	<key>com.apple.developer.networking.networkextension</key>
+	<array>
+		<string>packet-tunnel-provider-systemextension</string>
+	</array>
+
+	<!--
+	  ===============================================================
+	  VPN API access
+	  ===============================================================
+	  Required by `NETunnelProviderManager.startVPNTunnel()` from the
+	  host app. The system would otherwise refuse to set up the
+	  routing/PF rules even with a valid extension provider, leaving
+	  the user with a silent no-op when they click Connect.
+	-->
+	<key>com.apple.developer.networking.vpn.api</key>
+	<array>
+		<string>allow-vpn</string>
+	</array>
+
+	<!--
+	  ===============================================================
+	  Shared App Group between host app and extension
+	  ===============================================================
+	  Used for the provider-config envelope (`hpn_core::provider_envelope`,
+	  audit H15) and the tunnel-stats IPC ring buffer. The group ID
+	  MUST exactly match the one in
+	  src-tauri/entitlements.plist / xcode-native/macos/macos/macos.entitlements
+	  on the host side, otherwise the two halves cannot share files
+	  via `FileManager.containerURL(forSecurityApplicationGroupIdentifier:)`.
+	-->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.io.hpn.vpn</string>
+	</array>
+
+	<!--
+	  ===============================================================
+	  Shared Keychain access (per-profile password + rekey HMAC key)
+	  ===============================================================
+	  The host app stores the VPN password in the shared Keychain
+	  (audit CRED-1) and the extension reads it via the same access
+	  group at tunnel start. The `$(AppIdentifierPrefix)` placeholder
+	  is substituted at codesign time to the team ID — see the
+	  comment block at the top of this file for why we have to do
+	  the substitution ourselves in the release pipeline.
+	-->
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)io.hpn.vpn</string>
+	</array>
+</dict>
+</plist>

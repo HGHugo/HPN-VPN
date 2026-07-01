@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e
+
+if systemctl is-active --quiet hpn-relay.service 2>/dev/null; then
+    echo "HPN: Stopping hpn-relay..."
+    systemctl stop hpn-relay.service
+fi
+
+if systemctl is-enabled --quiet hpn-relay.service 2>/dev/null; then
+    systemctl disable hpn-relay.service > /dev/null 2>&1 || true
+fi

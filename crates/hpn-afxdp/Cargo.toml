@@ -1,0 +1,41 @@
+[package]
+name = "hpn-afxdp"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description = "AF_XDP zero-copy networking for HPN VPN"
+license.workspace = true
+publish = false
+
+[dependencies]
+# Core HPN dependencies
+hpn-core = { workspace = true }
+
+# Async runtime
+tokio = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+
+# Libc for syscalls
+libc = { workspace = true }
+
+# Memory mapping
+memmap2 = { workspace = true }
+
+# Metrics
+prometheus = { workspace = true }
+
+# Concurrency
+parking_lot = { workspace = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# We use raw syscalls, no external XDP library needed
+
+[dev-dependencies]
+tokio-test = "0.4"
+
+

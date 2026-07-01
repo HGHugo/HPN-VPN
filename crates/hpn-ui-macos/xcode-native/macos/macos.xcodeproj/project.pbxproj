@@ -1,0 +1,616 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		8432B2672F76C4700068EE78 /* packet-tunnel.systemextension in Embed System Extensions */ = {isa = PBXBuildFile; fileRef = 8432B25C2F76C4700068EE78 /* packet-tunnel.systemextension */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		8432B26D2F76C54C0068EE78 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8432B25E2F76C4700068EE78 /* NetworkExtension.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		8432B2652F76C4700068EE78 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8432B2422F76C42A0068EE78 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8432B25B2F76C4700068EE78;
+			remoteInfo = "packet-tunnel";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		8432B26C2F76C4700068EE78 /* Embed System Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Library/SystemExtensions;
+			dstSubfolderSpec = 1;
+			files = (
+				8432B2672F76C4700068EE78 /* packet-tunnel.systemextension in Embed System Extensions */,
+			);
+			name = "Embed System Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		8432B24A2F76C42B0068EE78 /* HPN VPN.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "HPN VPN.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8432B25C2F76C4700068EE78 /* io.hpn.vpn.macos.packet-tunnel.systemextension */ = {isa = PBXFileReference; explicitFileType = "wrapper.system-extension"; includeInIndex = 0; path = "io.hpn.vpn.macos.packet-tunnel.systemextension"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8432B25E2F76C4700068EE78 /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		8432B2682F76C4700068EE78 /* Exceptions for "packet-tunnel" folder in "packet-tunnel" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 8432B25B2F76C4700068EE78 /* packet-tunnel */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		8432B24C2F76C42B0068EE78 /* macos */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = macos;
+			sourceTree = "<group>";
+		};
+		8432B2602F76C4700068EE78 /* packet-tunnel */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				8432B2682F76C4700068EE78 /* Exceptions for "packet-tunnel" folder in "packet-tunnel" target */,
+			);
+			path = "packet-tunnel";
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		8432B2472F76C42B0068EE78 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8432B2592F76C4700068EE78 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8432B26D2F76C54C0068EE78 /* NetworkExtension.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		8432B2412F76C42A0068EE78 = {
+			isa = PBXGroup;
+			children = (
+				8432B24C2F76C42B0068EE78 /* macos */,
+				8432B2602F76C4700068EE78 /* packet-tunnel */,
+				8432B25D2F76C4700068EE78 /* Frameworks */,
+				8432B24B2F76C42B0068EE78 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		8432B24B2F76C42B0068EE78 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8432B24A2F76C42B0068EE78 /* HPN VPN.app */,
+				8432B25C2F76C4700068EE78 /* packet-tunnel.systemextension */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		8432B25D2F76C4700068EE78 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				8432B25E2F76C4700068EE78 /* NetworkExtension.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		8432B2492F76C42B0068EE78 /* macos */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8432B2552F76C42B0068EE78 /* Build configuration list for PBXNativeTarget "macos" */;
+			buildPhases = (
+				8432B2462F76C42B0068EE78 /* Sources */,
+				8432B2472F76C42B0068EE78 /* Frameworks */,
+				8432B2482F76C42B0068EE78 /* Resources */,
+				AA000001AAAA000000000001 /* Replace with Tauri Binary */,
+				8432B26C2F76C4700068EE78 /* Embed System Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				8432B2662F76C4700068EE78 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				8432B24C2F76C42B0068EE78 /* macos */,
+			);
+			name = macos;
+			packageProductDependencies = (
+			);
+			productName = macos;
+			productReference = 8432B24A2F76C42B0068EE78 /* HPN VPN.app */;
+			productType = "com.apple.product-type.application";
+		};
+		8432B25B2F76C4700068EE78 /* packet-tunnel */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8432B2692F76C4700068EE78 /* Build configuration list for PBXNativeTarget "packet-tunnel" */;
+			buildPhases = (
+				AA000002AAAA000000000002 /* Build hpn-tunnel-ext staticlib */,
+				8432B2582F76C4700068EE78 /* Sources */,
+				8432B2592F76C4700068EE78 /* Frameworks */,
+				8432B25A2F76C4700068EE78 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				8432B2602F76C4700068EE78 /* packet-tunnel */,
+			);
+			name = "packet-tunnel";
+			packageProductDependencies = (
+			);
+			productName = "packet-tunnel";
+			productReference = 8432B25C2F76C4700068EE78 /* packet-tunnel.systemextension */;
+			productType = "com.apple.product-type.system-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		8432B2422F76C42A0068EE78 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2640;
+				LastUpgradeCheck = 2640;
+				TargetAttributes = {
+					8432B2492F76C42B0068EE78 = {
+						CreatedOnToolsVersion = 26.4;
+					};
+					8432B25B2F76C4700068EE78 = {
+						CreatedOnToolsVersion = 26.4;
+					};
+				};
+			};
+			buildConfigurationList = 8432B2452F76C42A0068EE78 /* Build configuration list for PBXProject "macos" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 8432B2412F76C42A0068EE78;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 8432B24B2F76C42B0068EE78 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				8432B2492F76C42B0068EE78 /* macos */,
+				8432B25B2F76C4700068EE78 /* packet-tunnel */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		8432B2482F76C42B0068EE78 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8432B25A2F76C4700068EE78 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		AA000001AAAA000000000001 /* Replace with Tauri Binary */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Replace with Tauri Binary";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "# Build the Tauri binary and replace the Xcode-compiled binary.\n# This ensures Xcode signs the Tauri binary (with embedded React UI)\n# in the same operation as the packet-tunnel extension.\n\nREPO_ROOT=\"${SRCROOT}/../../../..\"\nTAURI_DIR=\"${REPO_ROOT}/crates/hpn-ui-macos\"\nTARGET_ARCH=\"aarch64-apple-darwin\"\nTAURI_BINARY=\"${REPO_ROOT}/target/${TARGET_ARCH}/release/hpn-ui-macos\"\n\n# Build UI if dist doesn't exist\nif [ ! -f \"${TAURI_DIR}/ui/dist/index.html\" ]; then\n    cd \"${TAURI_DIR}/ui\"\n    npm run build\nfi\n\n# Build Tauri binary (release, no bundle)\ncd \"${REPO_ROOT}\"\nexport MACOSX_DEPLOYMENT_TARGET=14.0\ncargo build --release --target ${TARGET_ARCH} -p hpn-ui-macos 2>&1\n\n# Replace the Xcode-compiled binary with the Tauri binary\ncp -f \"${TAURI_BINARY}\" \"${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}\"\n\necho \"Replaced binary with Tauri build ($(wc -c < ${TAURI_BINARY}) bytes)\"\n";
+		};
+		AA000002AAAA000000000002 /* Build hpn-tunnel-ext staticlib */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/../../../../crates/hpn-tunnel-ext/Cargo.toml",
+				"$(SRCROOT)/../../../../crates/hpn-tunnel-ext/src/lib.rs",
+				"$(SRCROOT)/../../../../crates/hpn-core/src/provider_envelope.rs",
+				"$(SRCROOT)/../../../../crates/hpn-core/src/lib.rs",
+				"$(SRCROOT)/../../../../crates/hpn-client-core/src/lib.rs",
+				"$(SRCROOT)/../../../../Cargo.toml",
+				"$(SRCROOT)/../../../../Cargo.lock",
+			);
+			name = "Build hpn-tunnel-ext staticlib";
+			outputPaths = (
+				"$(SRCROOT)/../../../../target/aarch64-apple-darwin/release/libhpn_tunnel_ext.a",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "# Build the Rust staticlib that the packet-tunnel Swift target links\n# against. Without this build phase, Xcode has no idea the .a file has\n# Rust source dependencies and links a stale cached lib whenever lib.rs\n# changes — leading to 'Undefined symbol: _hpn_envelope_unwrap_to_buf'\n# and similar link failures.\n#\n# inputPaths above lets Xcode track the source files so this script is\n# only re-run when one of them is newer than the .a output file.\n#\n# CARGO_TARGET_DIR is left to its default ($CARGO_HOME/target) so cargo\n# can reuse incremental compilation state. The output .a path is\n# stable: target/aarch64-apple-darwin/release/libhpn_tunnel_ext.a\n\nset -euo pipefail\n\n# We canonicalise REPO_ROOT below because the Xcode-bundled `nm`\n# (= llvm-nm) refuses paths containing unresolved '..' segments\n# with a 'No such file or directory' error, even when the\n# underlying file exists. BSD nm tolerates them; llvm-nm does not.\nREPO_ROOT=\"${SRCROOT}/../../../..\"\nTARGET_ARCH=\"aarch64-apple-darwin\"\n\necho \"Building hpn-tunnel-ext staticlib for ${TARGET_ARCH}\"\ncd \"${REPO_ROOT}\"\nREPO_ROOT=\"$(pwd -P)\"\nexport MACOSX_DEPLOYMENT_TARGET=14.0\n\n# Pick up cargo from the user's PATH (rustup-managed) — Xcode strips\n# /opt/homebrew/bin etc. from the build environment.\nexport PATH=\"$HOME/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:$PATH\"\n\ncargo build --release --target \"${TARGET_ARCH}\" -p hpn-tunnel-ext 2>&1\n\n# Sanity check: verify the symbols the Swift extension actually links\n# against are present. If we ever push a Rust change that drops a\n# `#[unsafe(no_mangle)]` attribute on one of the FFI exports, this\n# fails fast inside Xcode rather than at the final link step where\n# the error would be much harder to map back to a source change.\n#\n# Implementation note: we use bash's built-in [[ \"$VAR\" == *needle* ]]\n# substring test instead of `printf | grep -q` because:\n#   1. With `set -o pipefail`, grep -q exits as soon as a match is\n#      found, SIGPIPE-killing the upstream printf. The pipe then\n#      reports failure (141) which the surrounding `if !` flips back\n#      to success — silently triggering the error branch even though\n#      the symbol IS present. The bug is virtually un-debuggable from\n#      the build log alone.\n#   2. The substring test is pure bash, runs in-process, and\n#      bypasses the pipe entirely.\nLIB=\"${REPO_ROOT}/target/${TARGET_ARCH}/release/libhpn_tunnel_ext.a\"\nLIB_SYMBOLS=$(/usr/bin/nm -gU \"$LIB\" 2>/dev/null || true)\nif [ -z \"$LIB_SYMBOLS\" ]; then\n    echo \"error: nm produced no symbol output for $LIB. Check that the file exists and that /usr/bin/nm is functional.\" >&2\n    exit 1\nfi\nfor sym in _hpn_tunnel_start _hpn_envelope_unwrap_to_buf _hpn_tunnel_stop _hpn_tunnel_get_settings_json _hpn_tunnel_write_packets _hpn_tunnel_read_packets; do\n    if [[ \"$LIB_SYMBOLS\" != *\" ${sym}\"$'\\n'* && \"$LIB_SYMBOLS\" != *\" ${sym}\" ]]; then\n        echo \"error: ${sym} missing from $(basename \"$LIB\") — Rust FFI export was probably renamed or removed\" >&2\n        exit 1\n    fi\ndone\necho \"hpn-tunnel-ext staticlib built and FFI symbols verified\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		8432B2462F76C42B0068EE78 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8432B2582F76C4700068EE78 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		8432B2662F76C4700068EE78 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8432B25B2F76C4700068EE78 /* packet-tunnel */;
+			targetProxy = 8432B2652F76C4700068EE78 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		8432B2532F76C42B0068EE78 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 6Y986MRM6T;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		8432B2542F76C42B0068EE78 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 6Y986MRM6T;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		8432B2562F76C42B0068EE78 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = macos/macos.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 10;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = 6Y986MRM6T;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "HPN VPN";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 HMSX Solutions. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = io.hpn.vpn.macos;
+				PRODUCT_NAME = "HPN VPN";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "HPN VPN macOS PKG";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		8432B2572F76C42B0068EE78 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = macos/macos.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 10;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = 6Y986MRM6T;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "HPN VPN";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 HMSX Solutions. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = io.hpn.vpn.macos;
+				PRODUCT_NAME = "HPN VPN";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "HPN VPN macOS PKG";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		8432B26A2F76C4700068EE78 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "packet-tunnel/packet_tunnel.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 10;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = 6Y986MRM6T;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "packet-tunnel/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "HPN VPN Packet Tunnel";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 HMSX Solutions. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				"LIBRARY_SEARCH_PATHS[arch=*]" = "$(PROJECT_DIR)/../../../../target/aarch64-apple-darwin/release";
+				MARKETING_VERSION = 0.1.1;
+				"OTHER_LDFLAGS[arch=*]" = "-lhpn_tunnel_ext";
+				PRODUCT_BUNDLE_IDENTIFIER = "io.hpn.vpn.macos.packet-tunnel";
+				PRODUCT_NAME = "io.hpn.vpn.macos.packet-tunnel";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "HPN VPN Packet Tunnel PKG";
+				REGISTER_APP_GROUPS = YES;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				WRAPPER_EXTENSION = systemextension;
+			};
+			name = Debug;
+		};
+		8432B26B2F76C4700068EE78 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "packet-tunnel/packet_tunnel.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 10;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = 6Y986MRM6T;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "packet-tunnel/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "HPN VPN Packet Tunnel";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 HMSX Solutions. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				"LIBRARY_SEARCH_PATHS[arch=*]" = "$(PROJECT_DIR)/../../../../target/aarch64-apple-darwin/release";
+				MARKETING_VERSION = 0.1.1;
+				"OTHER_LDFLAGS[arch=*]" = "-lhpn_tunnel_ext";
+				PRODUCT_BUNDLE_IDENTIFIER = "io.hpn.vpn.macos.packet-tunnel";
+				PRODUCT_NAME = "io.hpn.vpn.macos.packet-tunnel";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "HPN VPN Packet Tunnel PKG";
+				REGISTER_APP_GROUPS = YES;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				WRAPPER_EXTENSION = systemextension;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		8432B2452F76C42A0068EE78 /* Build configuration list for PBXProject "macos" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8432B2532F76C42B0068EE78 /* Debug */,
+				8432B2542F76C42B0068EE78 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		8432B2552F76C42B0068EE78 /* Build configuration list for PBXNativeTarget "macos" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8432B2562F76C42B0068EE78 /* Debug */,
+				8432B2572F76C42B0068EE78 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		8432B2692F76C4700068EE78 /* Build configuration list for PBXNativeTarget "packet-tunnel" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8432B26A2F76C4700068EE78 /* Debug */,
+				8432B26B2F76C4700068EE78 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 8432B2422F76C42A0068EE78 /* Project object */;
+}

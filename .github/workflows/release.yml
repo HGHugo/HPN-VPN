@@ -1,0 +1,504 @@
+# ==============================================================================
+# HPN VPN Release Workflow
+# ==============================================================================
+# This workflow builds and releases HPN VPN for all supported platforms.
+#
+# CODE SIGNING SECRETS (configure in GitHub repository settings):
+#
+# Linux/Debian (GPG):
+#   - GPG_PRIVATE_KEY: Base64-encoded GPG private key
+#   - GPG_PASSPHRASE: Passphrase for the GPG key
+#
+# macOS (Apple Developer):
+#   - APPLE_CERTIFICATE: Base64-encoded .p12 Developer ID Application certificate
+#   - APPLE_CERTIFICATE_PASSWORD: Password for the .p12 certificate
+#   - APPLE_ID: Apple ID email for notarization
+#   - APPLE_TEAM_ID: Apple Developer Team ID (10-character string)
+#   - APPLE_APP_PASSWORD: App-specific password for notarization
+#
+# Windows (Authenticode):
+#   - WINDOWS_CERTIFICATE: Base64-encoded .pfx code signing certificate
+#   - WINDOWS_CERTIFICATE_PASSWORD: Password for the .pfx certificate
+#
+# Note: Code signing steps are skipped if secrets are not configured.
+#       This allows the workflow to run without signing for testing purposes.
+# ==============================================================================
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      skip_signing:
+        description: 'Skip code signing (useful when certificates are not available locally)'
+        required: false
+        # NOTE: this input is NOT currently consulted by the signing steps — they
+        # gate on the presence of the cert secret (`env.*_CERTIFICATE != ''`)
+        # instead. Default is `false` (signing ON) so an unintended manual
+        # dispatch on a tag with secrets configured DOES sign. If a developer
+        # wants an unsigned dev build they must tick the box explicitly.
+        default: 'false'
+        type: boolean
+      version:
+        description: 'Version to release (without v prefix, e.g., 0.1.0)'
+        required: true
+        type: string
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build release binaries
+        run: |
+          cargo build --release -p hpn-server
+          cargo build --release -p hpn-relay
+
+      - name: Get version
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      # ==========================================================================
+      # CODE SIGNING - Linux GPG Signing
+      # ==========================================================================
+      # Required secrets:
+      #   - GPG_PRIVATE_KEY: Base64-encoded GPG private key for signing
+      #   - GPG_PASSPHRASE: Passphrase for the GPG key
+      # 
+      # To generate a GPG key:
+      #   gpg --full-generate-key  # Choose RSA 4096-bit, no expiration for releases
+      #   gpg --export-secret-keys YOUR_KEY_ID | base64 > gpg-key.b64
+      # ==========================================================================
+      - name: Sign Linux binaries (GPG)
+        if: env.GPG_PRIVATE_KEY != ''
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          # Import GPG key
+          echo "$GPG_PRIVATE_KEY" | base64 --decode | gpg --batch --import
+          
+          # Get the key ID for signing
+          KEY_ID=$(gpg --list-secret-keys --keyid-format LONG | grep sec | head -1 | awk '{print $2}' | cut -d'/' -f2)
+          
+          # Sign the server binary
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
+            --local-user "$KEY_ID" \
+            --detach-sign --armor target/release/hpn-server
+          
+          # Sign the relay binary
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
+            --local-user "$KEY_ID" \
+            --detach-sign --armor target/release/hpn-relay
+          
+          echo "Signatures created:"
+          ls -la target/release/*.asc
+
+      - name: Create server tarball
+        run: |
+          mkdir -p dist/hpn-server
+          cp target/release/hpn-server dist/hpn-server/
+          cp target/release/hpn-server.asc dist/hpn-server/ 2>/dev/null || true
+          cp config/server.example.toml dist/hpn-server/server.toml
+          cp README.md LICENSE dist/hpn-server/ 2>/dev/null || true
+          cd dist && tar czf hpn-vpn-server-${{ steps.get_version.outputs.version }}-linux-amd64.tar.gz hpn-server
+
+      - name: Create relay tarball
+        run: |
+          mkdir -p dist/hpn-relay
+          cp target/release/hpn-relay dist/hpn-relay/
+          cp target/release/hpn-relay.asc dist/hpn-relay/ 2>/dev/null || true
+          cp config/relay.example.toml dist/hpn-relay/relay.toml 2>/dev/null || echo "# Default relay config" > dist/hpn-relay/relay.toml
+          cp README.md LICENSE dist/hpn-relay/ 2>/dev/null || true
+          cd dist && tar czf hpn-vpn-relay-${{ steps.get_version.outputs.version }}-linux-amd64.tar.gz hpn-relay
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-binaries
+          path: dist/*.tar.gz
+
+  build-deb:
+    name: Build Debian Package
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Get version
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Build package
+        run: |
+          chmod +x packaging/deb/build.sh
+          VERSION=${{ steps.get_version.outputs.version }} packaging/deb/build.sh
+
+      # ==========================================================================
+      # CODE SIGNING - Debian Package Signing
+      # ==========================================================================
+      # Required secrets:
+      #   - GPG_PRIVATE_KEY: Base64-encoded GPG private key for signing
+      #   - GPG_PASSPHRASE: Passphrase for the GPG key
+      # 
+      # Note: Uses dpkg-sig for .deb package signing
+      # ==========================================================================
+      - name: Sign Debian package (GPG)
+        if: env.GPG_PRIVATE_KEY != ''
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          # Install dpkg-sig for debian package signing
+          sudo apt-get update && sudo apt-get install -y dpkg-sig
+          
+          # Import GPG key
+          echo "$GPG_PRIVATE_KEY" | base64 --decode | gpg --batch --import
+          
+          # Get the key ID for signing
+          KEY_ID=$(gpg --list-secret-keys --keyid-format LONG | grep sec | head -1 | awk '{print $2}' | cut -d'/' -f2)
+          
+          # Configure gpg-agent for non-interactive signing
+          mkdir -p ~/.gnupg
+          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          gpg-connect-agent reloadagent /bye || true
+          
+          # Sign all .deb packages
+          for deb in target/packaging/deb/*.deb; do
+            if [ -f "$deb" ]; then
+              echo "Signing $deb..."
+              dpkg-sig --sign builder -k "$KEY_ID" \
+                --gpg-options "--batch --pinentry-mode loopback --passphrase $GPG_PASSPHRASE" \
+                "$deb"
+            fi
+          done
+          
+          echo "Signed packages:"
+          dpkg-sig --verify target/packaging/deb/*.deb || true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-package
+          path: target/packaging/deb/*.deb
+
+  build-macos:
+    name: Build macOS (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            runner: macos-15
+            target: x86_64-apple-darwin
+          - arch: aarch64
+            runner: macos-14
+            target: aarch64-apple-darwin
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Get version
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Build client
+        run: cargo build --release -p hpn-client-macos --target ${{ matrix.target }}
+
+      # ==========================================================================
+      # CODE SIGNING - macOS Code Signing & Notarization
+      # ==========================================================================
+      # Required secrets:
+      #   - APPLE_CERTIFICATE: Base64-encoded .p12 Developer ID Application certificate
+      #   - APPLE_CERTIFICATE_PASSWORD: Password for the .p12 certificate
+      #   - APPLE_ID: Apple ID email for notarization
+      #   - APPLE_TEAM_ID: Apple Developer Team ID (10-character string)
+      #   - APPLE_APP_PASSWORD: App-specific password for notarization
+      #
+      # To export certificate:
+      #   1. Open Keychain Access
+      #   2. Find "Developer ID Application: Your Name (TEAM_ID)"
+      #   3. Right-click > Export > Save as .p12
+      #   4. base64 -i certificate.p12 > certificate.b64
+      #
+      # To create app-specific password:
+      #   1. Go to appleid.apple.com > Security > App-Specific Passwords
+      #   2. Generate new password for "HPN VPN Notarization"
+      # ==========================================================================
+      - name: Sign macOS binary
+        if: env.APPLE_CERTIFICATE != ''
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          # Decode and import certificate
+          echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
+          
+          # Create temporary keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+          
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          
+          # Import certificate to keychain
+          security import certificate.p12 -k "$KEYCHAIN_PATH" \
+            -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security
+          
+          # Set key partition list for codesign access
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          
+          # Add keychain to search list
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+          
+          # Find the signing identity
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep "Developer ID Application" | head -1 | awk -F'"' '{print $2}')
+          
+          if [ -z "$IDENTITY" ]; then
+            echo "Error: No Developer ID Application certificate found"
+            exit 1
+          fi
+          
+          echo "Signing with identity: $IDENTITY"
+          
+          # Sign the binary with hardened runtime (required for notarization)
+          codesign --sign "$IDENTITY" \
+            --options runtime \
+            --timestamp \
+            --force \
+            --verbose \
+            target/${{ matrix.target }}/release/hpn-client-macos
+          
+          # Verify signature
+          codesign --verify --verbose target/${{ matrix.target }}/release/hpn-client-macos
+          
+          # Clean up certificate file
+          rm -f certificate.p12
+
+      - name: Build package
+        run: |
+          chmod +x packaging/macos/build.sh
+          VERSION=${{ steps.get_version.outputs.version }} packaging/macos/build.sh
+
+      - name: Notarize macOS DMG
+        if: env.APPLE_ID != ''
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          DMG_PATH=$(find target/packaging/macos -name "*.dmg" | head -1)
+          
+          if [ -z "$DMG_PATH" ]; then
+            echo "No DMG found to notarize"
+            exit 0
+          fi
+          
+          echo "Notarizing: $DMG_PATH"
+          
+          # Submit for notarization
+          xcrun notarytool submit "$DMG_PATH" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --wait \
+            --timeout 30m
+          
+          # Staple the notarization ticket to the DMG
+          xcrun stapler staple "$DMG_PATH"
+          
+          # Verify stapling
+          xcrun stapler validate "$DMG_PATH"
+          
+          echo "Notarization complete!"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.arch }}
+          path: target/packaging/macos/*.dmg
+
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Get version
+        id: get_version
+        shell: bash
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Build client
+        run: cargo build --release -p hpn-client-windows
+
+      # ==========================================================================
+      # CODE SIGNING - Windows Authenticode Signing
+      # ==========================================================================
+      # Required secrets:
+      #   - WINDOWS_CERTIFICATE: Base64-encoded .pfx code signing certificate
+      #   - WINDOWS_CERTIFICATE_PASSWORD: Password for the .pfx certificate
+      #
+      # Certificate options:
+      #   1. Standard Code Signing Certificate (requires SmartScreen reputation building)
+      #   2. EV Code Signing Certificate (immediate SmartScreen trust, requires HSM)
+      #
+      # To export certificate:
+      #   1. Open Certificate Manager (certmgr.msc)
+      #   2. Find your code signing certificate under Personal > Certificates
+      #   3. Right-click > All Tasks > Export > Include private key > PFX format
+      #   4. PowerShell: [Convert]::ToBase64String([IO.File]::ReadAllBytes("cert.pfx"))
+      #
+      # Note: EV certificates require hardware token and cannot be used in CI directly.
+      #       Consider using Azure SignTool or similar for EV signing.
+      # ==========================================================================
+      - name: Sign Windows binary (Authenticode)
+        if: env.WINDOWS_CERTIFICATE != ''
+        env:
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        shell: pwsh
+        run: |
+          # Decode certificate
+          $certBytes = [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE)
+          $certPath = Join-Path $env:RUNNER_TEMP "certificate.pfx"
+          [IO.File]::WriteAllBytes($certPath, $certBytes)
+          
+          # Find signtool.exe
+          $signtool = Get-ChildItem -Path "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Recurse -Filter "signtool.exe" | 
+                      Where-Object { $_.FullName -like "*x64*" } | 
+                      Sort-Object FullName -Descending | 
+                      Select-Object -First 1
+          
+          if (-not $signtool) {
+            Write-Error "signtool.exe not found"
+            exit 1
+          }
+          
+          Write-Host "Using signtool: $($signtool.FullName)"
+          
+          # Sign the executable with SHA-256 and RFC 3161 timestamp
+          & $signtool.FullName sign `
+            /f $certPath `
+            /p $env:WINDOWS_CERTIFICATE_PASSWORD `
+            /tr http://timestamp.digicert.com `
+            /td sha256 `
+            /fd sha256 `
+            /v `
+            target\release\hpn-client-windows.exe
+          
+          # Verify signature
+          & $signtool.FullName verify /pa /v target\release\hpn-client-windows.exe
+          
+          # Clean up certificate
+          Remove-Item $certPath -Force
+          
+          Write-Host "Windows binary signed successfully!"
+
+      - name: Create ZIP package
+        run: |
+          mkdir -p dist
+          cp target/release/hpn-client-windows.exe dist/hpn-vpn.exe
+          Compress-Archive -Path dist/* -DestinationPath hpn-vpn-${{ steps.get_version.outputs.version }}-windows-x64.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-package
+          path: hpn-vpn-*.zip
+
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [build-linux, build-deb, build-macos, build-windows]
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+          find artifacts -type f \( -name "*.tar.gz" -o -name "*.deb" -o -name "*.dmg" -o -name "*.zip" \) -exec cp {} release/ \;
+          ls -la release/
+
+      - name: Generate checksums
+        run: |
+          cd release
+          sha256sum * > checksums.txt
+          cat checksums.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          prerelease: false
+          name: HPN VPN ${{ steps.get_version.outputs.version }}
+          body: |
+            ## HPN VPN ${{ steps.get_version.outputs.version }}
+
+            ### Features
+            - Post-quantum cryptography (ML-KEM-768, ML-DSA-65)
+            - Hybrid X25519 + ML-KEM key exchange
+            - AES-256-GCM encryption
+            - Multi-hop relay support
+            - Kill switch protection
+            - DNS leak protection
+            - IPv4/IPv6 dual-stack
+
+            ### Downloads
+            - **Linux Server**: `hpn-vpn-server-${{ steps.get_version.outputs.version }}-linux-amd64.tar.gz`
+            - **Linux Relay**: `hpn-vpn-relay-${{ steps.get_version.outputs.version }}-linux-amd64.tar.gz`
+            - **macOS Client (Intel)**: `hpn-vpn-${{ steps.get_version.outputs.version }}-macos-x86_64.dmg`
+            - **macOS Client (Apple Silicon)**: `hpn-vpn-${{ steps.get_version.outputs.version }}-macos-aarch64.dmg`
+            - **Windows Client**: `hpn-vpn-${{ steps.get_version.outputs.version }}-windows-x64.zip`
+            - **Debian/Ubuntu**: `hpn-vpn_${{ steps.get_version.outputs.version }}_amd64.deb`
+
+            ### Checksums
+            See `checksums.txt` for SHA256 checksums of all downloads.
+
+            ### Security
+            This release uses NIST-approved post-quantum cryptography algorithms.
+          files: |
+            release/*
+            release/checksums.txt

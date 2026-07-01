@@ -1,0 +1,18 @@
+# Cross-compilation configuration
+# Usage: cross build -p hpn-client-windows --target x86_64-pc-windows-gnu --release
+
+[build.env]
+passthrough = [
+    "RUST_BACKTRACE",
+    "RUST_LOG",
+]
+
+[target.x86_64-pc-windows-gnu]
+# Use the default cross image which includes MinGW and proper headers
+image = "ghcr.io/cross-rs/x86_64-pc-windows-gnu:main"
+
+[target.x86_64-unknown-linux-gnu]
+image = "ghcr.io/cross-rs/x86_64-unknown-linux-gnu:main"
+
+[target.aarch64-unknown-linux-gnu]
+image = "ghcr.io/cross-rs/aarch64-unknown-linux-gnu:main"

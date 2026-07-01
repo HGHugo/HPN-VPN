@@ -1,0 +1,130 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/hpn-core",
+    "crates/hpn-server",
+    "crates/hpn-client-core",
+    "crates/hpn-client-windows",
+    "crates/hpn-client-macos",
+    "crates/hpn-relay",
+    "crates/hpn-afxdp",
+    "crates/hpn-ui-windows/src-tauri",
+    "crates/hpn-ui-macos/src-tauri",
+    "crates/hpn-tunnel-ext",
+]
+
+[workspace.package]
+version = "0.1.1"
+edition = "2024"
+# Minimum Supported Rust Version. `edition = "2024"` requires >= 1.85, so
+# declare that explicitly: `cargo build` on a stale toolchain now fails fast
+# with "requires rustc 1.85" instead of an obscure syntax error three crates
+# deep. Declarative-only (no `rust-toolchain.toml`) so each runner still picks
+# up security patches of rustc automatically; bump this field intentionally
+# when a newer language feature is actually adopted.
+rust-version = "1.85"
+license = "AGPL-3.0-or-later"
+authors = ["HMSX Solutions <contact@hmsx.io>"]
+
+[workspace.dependencies]
+# Cryptography
+x25519-dalek = { version = "2", features = ["static_secrets"] }
+# AVX2 + NEON are enabled by default; the explicit patch-floor picks up
+# upstream PQClean synchronisation fixes (side-channel hardening, etc.).
+pqcrypto-mlkem = "0.1.1"
+pqcrypto-mldsa = "0.1.2"
+pqcrypto-traits = "0.3"
+ring = "0.17"
+zeroize = { version = "1", features = ["derive"] }
+rand = "0.8"
+subtle = "2.5"  # Constant-time comparisons for crypto
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+
+# Networking
+tun = { package = "tun-rs", version = "2" }
+socket2 = { version = "0.5", features = ["all"] }
+
+# TLS for TCP fallback
+tokio-rustls = "0.26"
+rustls = { version = "0.23", default-features = false, features = ["ring", "logging", "std"] }
+rustls-pki-types = "1"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+bytes = "1"
+
+# Error handling
+thiserror = "2"
+anyhow = "1"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# Utilities
+bitflags = "2"
+parking_lot = "0.12"
+base64 = "0.22"
+sha2 = "0.10"
+hex = "0.4"
+uuid = "1"
+
+# High-performance concurrency
+crossbeam-channel = "0.5"
+dashmap = "6"
+
+# System interfaces
+libc = "0.2"
+memmap2 = "0.9"
+
+# Metrics
+prometheus = "0.14"
+
+# Linux io_uring for high-performance async I/O
+io-uring = "0.7"
+
+# HTTP (for metrics/admin endpoints)
+hyper = { version = "1", features = ["server", "http1"] }
+hyper-util = { version = "0.1", features = ["tokio", "server", "server-auto"] }
+http-body-util = "0.1"
+
+# Benchmarking
+criterion = "0.5"
+
+# Internal crates
+hpn-core = { path = "crates/hpn-core" }
+hpn-client-core = { path = "crates/hpn-client-core" }
+
+[workspace.lints.rust]
+unsafe_code = "warn"
+
+[workspace.lints.clippy]
+all = "warn"
+pedantic = "warn"
+nursery = "warn"
+
+# Release profile optimizations for maximum performance
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+
+# Enable frame pointers for profiling if needed
+# debug = 1
+# Aggressive CPU-specific optimizations
+[profile.release.build-override]
+opt-level = 3
+
+# Optimize dependencies in release too
+[profile.release.package."*"]
+opt-level = 3

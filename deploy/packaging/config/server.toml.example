@@ -1,0 +1,181 @@
+# HPN VPN Server Configuration
+#
+# Performance is AUTO-DETECTED at runtime:
+# - CPU cores -> worker threads
+# - Kernel version -> io_uring or fallback
+# - NIC driver -> AF_XDP if supported
+# - Memory -> buffer sizes
+#
+# No tuning needed - just configure your network settings and go!
+
+[server]
+# Listen address for UDP connections
+listen_addr = "0.0.0.0:51820"
+
+# IPv4 address pool for clients (CIDR notation)
+# Clients will be assigned IPs from this range (starting at .2)
+ipv4_pool = "10.99.0.0/24"
+
+# Server's tunnel IP address (must be in the pool)
+server_tunnel_ip = "10.99.0.1"
+
+# Optional: IPv6 pool for dual-stack
+# Uses ULA (Unique Local Address) range fd00::/8
+# ipv6_pool = "fd00:99::/64"
+# server_tunnel_ipv6 = "fd00:99::1"
+# dns_servers_v6 = ["fd00:99::1", "2001:4860:4860::8888"]
+
+# DNS servers to provide to clients
+dns_servers = ["10.99.0.1", "8.8.8.8"]
+
+# TUN device name
+tun_name = "hpn0"
+
+# MTU for the tunnel (1420 is safe for most networks)
+mtu = 1420
+
+# Session timeout in seconds (inactive sessions will be removed)
+session_timeout_secs = 180
+
+# Keepalive interval in seconds
+keepalive_interval_secs = 25
+
+# Log file (optional — logs also go to stdout/journald)
+# When set, logs are written to this file with automatic size-based rotation.
+# log_file = "/var/log/hpn/server.log"
+# log_max_size_mb = 100    # Rotate at 100 MB (default)
+# log_max_files = 5        # Keep 5 rotated files (default)
+
+# Strict No-Log Mode (default: true)
+# When true:
+#   - Client IP addresses are NEVER logged (redacted)
+#   - No per-session traffic stats in logs
+#   - All session data is RAM-only (flushed on reboot)
+# Set to false for full monitoring/debugging
+no_log = true
+
+# Maximum concurrent sessions
+# max_sessions auto-calculated from IP pool (254 for /24, 65534 for /16)
+
+# Enable NAT/masquerade for VPN traffic
+enable_nat = true
+
+# Network interface for NAT (auto-detected if not specified)
+# nat_interface = "eth0"
+
+# ============================================================================
+# Privilege Dropping (Security Hardening)
+# ============================================================================
+# After binding to privileged ports and creating TUN device, the server can
+# drop root privileges and run as a less privileged user/group.
+# This limits the impact of potential security vulnerabilities.
+#
+# Create a dedicated user:
+#   sudo useradd -r -s /bin/false hpn
+#
+# Uncomment to enable:
+# run_as_user = "hpn"
+# run_as_group = "hpn"
+
+# ============================================================================
+# Metrics Configuration
+# ============================================================================
+# Enable Prometheus metrics HTTP endpoint
+enable_metrics = false
+
+# Metrics HTTP listen address (localhost only for security)
+metrics_addr = "127.0.0.1:9100"
+
+# ============================================================================
+# Admin API Configuration
+# ============================================================================
+# Enable Admin REST API for session management
+# Endpoints:
+#   GET    /api/sessions      - List all sessions
+#   GET    /api/sessions/{id} - Get session details
+#   DELETE /api/sessions/{id} - Terminate a session
+#   GET    /api/stats         - Server statistics
+#   GET    /api/health        - Health check
+enable_admin_api = false
+
+# Admin API HTTP listen address (localhost only for security)
+# WARNING: Do NOT expose to public internet without authentication
+admin_addr = "127.0.0.1:9101"
+
+# Admin API authentication token (REQUIRED for sensitive endpoints)
+# Without this token, sensitive endpoints (/api/sessions, /api/stats)
+# will return 403 Forbidden to prevent accidental exposure.
+# Generate a secure token: openssl rand -hex 32
+# admin_api_token = "your-secure-random-token-here"
+
+# ============================================================================
+# Post-Quantum Cryptography
+# ============================================================================
+# The server accepts BOTH security levels simultaneously (Level 3 and Level 5).
+# The client chooses which level to use at connection time:
+#   Level 3 (Standard) - ML-KEM-768 + ML-DSA-65 (~AES-192 equivalent)
+#   Level 5 (High)     - ML-KEM-1024 + ML-DSA-87 (~AES-256 equivalent)
+#
+# No server-side configuration needed — just provide keypairs for both levels.
+#
+# Minimum accepted security level on incoming handshakes.
+# Accepts "level3" (default) or "level5". Set to "level5" for deployments
+# that must cryptographically enforce maximum post-quantum security — any
+# client that proposes a weaker level is rejected at handshake time.
+# min_security_level = "level3"
+
+# ============================================================================
+# Per-Session Rate Limits
+# ============================================================================
+# Safety caps applied to every active session. Set either to 0 to disable
+# that dimension. Defaults cover any realistic single-user workload
+# (HD streaming, large file transfers, online gaming) while preventing a
+# single misbehaving or malicious client from saturating the server.
+#
+# Raise these for deployments where a single client legitimately needs
+# sustained multi-gigabit throughput.
+#
+# session_rate_limit_pps = 100000       # packets/sec (0 = unlimited)
+# session_rate_limit_bps = 125000000    # bytes/sec, 1 Gbps (0 = unlimited)
+
+# HPN is open-source (AGPL-3.0-or-later) with unlimited sessions. No license
+# key is required. Session count is bounded only by your configured IPv4 pool
+# size.
+
+# ============================================================================
+# User Authentication (Optional)
+# ============================================================================
+# Enable server-side username/password authentication.
+# - users_db_path: SQLite database managed by `hpn-server user ...`
+# - require_auth: when true, clients WITHOUT valid credentials are rejected
+#
+# users_db_path = "/var/lib/hpn/users.db"
+# require_auth = true
+
+# ============================================================================
+# Server Keypairs
+# ============================================================================
+# Generate ALL keypairs with: hpn-server genkey --output server-keys.toml
+# The install script automatically appends all sections to this config.
+# KEEP THE SECRET KEYS SECURE!
+#
+# Four keypair sections are required for full functionality:
+#   [keypair_level3]     - ML-DSA-65 signing (Level 3 / Standard)
+#   [keypair_level5]     - ML-DSA-87 signing (Level 5 / High)
+#   [kem_keypair_level3] - Hybrid X25519+ML-KEM-768 for identity hiding (Level 3)
+#   [kem_keypair_level5] - Hybrid X25519+ML-KEM-1024 for identity hiding (Level 5)
+#
+# Signing keypairs are REQUIRED (server won't start without them).
+# KEM keypairs are OPTIONAL (identity hiding disabled if absent).
+#
+# Share with clients:
+#   "Server Public Key"     = signing public_key (from keypair_level3 or keypair_level5)
+#   "Server KEM Public Key" = KEM public_key (from kem_keypair_level3 or kem_keypair_level5)
+# ============================================================================
+
+# ============================================================================
+# Keypairs are AUTO-GENERATED during installation (apt install hpn-server).
+# They are appended below this line by the postinst script.
+# To regenerate: hpn-server genkey --output /var/lib/hpn/server-keys.toml
+# Then append the output to this file.
+# ============================================================================

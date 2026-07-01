@@ -1,0 +1,73 @@
+# HPN VPN Relay Configuration
+#
+# A relay forwards encrypted HPN packets between clients and upstream servers
+# without decrypting them. Used for multi-hop VPN setups.
+
+[relay]
+# Listen address for client connections
+listen_addr = "0.0.0.0:51821"
+
+# Upstream server or relay to forward packets to
+upstream_addr = "vpn-server.example.com:51820"
+
+# Optional relay identifier for logging
+relay_id = "relay-01"
+
+# Maximum concurrent sessions
+max_sessions = 10000
+
+# Session timeout in seconds (inactive sessions removed)
+session_timeout_secs = 180
+
+# UDP receive buffer size
+buffer_size = 65535
+
+# Strict No-Log Mode (default: true)
+# When true, client IP addresses are redacted from all logs.
+no_log = true
+
+# ============================================================================
+# Rate Limiting (Optional)
+# ============================================================================
+# Packets per second limit per session (0 = unlimited)
+# rate_limit_pps = 10000
+
+# Bytes per second limit per session (0 = unlimited)
+# rate_limit_bps = 100000000  # 100 MB/s
+
+# Handshake anti-flood limit per source IP (packets/second)
+# handshake_rate_limit_pps = 64
+
+# Maximum concurrent handshake forwarding tasks
+# max_concurrent_handshakes = 256
+
+# ============================================================================
+# Metrics Configuration (Optional)
+# ============================================================================
+# Enable Prometheus metrics HTTP endpoint
+enable_metrics = false
+
+# Metrics HTTP listen address
+# Default: 127.0.0.1:9100 (localhost only for security)
+# Change to 0.0.0.0:9100 if you need external access
+metrics_addr = "127.0.0.1:9101"
+
+# Bearer token required to access the metrics endpoint.
+#
+# STRONGLY RECOMMENDED whenever metrics_addr binds to a non-loopback
+# interface — the Prometheus endpoint exposes session counts, upstream
+# health, and load patterns that help an attacker plan DoS campaigns.
+#
+# Clients must send `Authorization: Bearer <token>` header. Generate a
+# secure token: openssl rand -hex 32
+#
+# metrics_auth_token = "your-secure-random-token-here"
+
+# ============================================================================
+# Statistics (Optional)
+# ============================================================================
+# Enable periodic stats logging
+enable_stats = true
+
+# Stats reporting interval in seconds
+stats_interval_secs = 60

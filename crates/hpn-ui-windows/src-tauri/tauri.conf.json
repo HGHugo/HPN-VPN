@@ -1,0 +1,73 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "HPN VPN",
+  "version": "0.1.1",
+  "identifier": "io.hmsx.hpn.vpn",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../ui/dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "HPN VPN",
+        "width": 520,
+        "height": 780,
+        "resizable": true,
+        "minWidth": 480,
+        "minHeight": 600,
+        "center": true,
+        "decorations": true,
+        "transparent": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ipc: tauri:"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "createUpdaterArtifacts": false,
+    "targets": ["msi"],
+    "publisher": "HMSX Solutions",
+    "licenseFile": "../../../deploy/installer-assets/LICENSE.rtf",
+    "copyright": "© 2026 HMSX Solutions. All rights reserved.",
+    "category": "Utility",
+    "shortDescription": "Post-Quantum VPN — ML-KEM + X25519 hybrid encryption",
+    "longDescription": "HPN VPN is an open-source (AGPL-3.0) post-quantum secure VPN using NIST FIPS 203/204 compliant cryptography (ML-KEM-768/1024 + X25519 hybrid KEM, ML-DSA-65/87 signatures, AES-256-GCM). Features include kill switch, DNS leak protection, IPv6 dual-stack, and multi-hop relay support.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "resources/wintun.dll": "./"
+    },
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "http://timestamp.acs.microsoft.com",
+      "wix": {
+        "language": "en-US",
+        "upgradeCode": "E5B8F9A2-4C3D-4E5F-9A1B-2C3D4E5F6A7B",
+        "bannerPath": "../../../deploy/installer-assets/banner.bmp",
+        "dialogImagePath": "../../../deploy/installer-assets/dialog.bmp"
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEE5NzA3QkI4QjI2Q0FBMTQKUldRVXFteXl1SHR3cWF1RHNwV1RNRDJIS2JydEg0VWZjQzhUOE5sQXQyTVAxV0Q5T1NUZ1BuMWYK",
+      "endpoints": [
+        "https://pkg.hpn.hmsx.io/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

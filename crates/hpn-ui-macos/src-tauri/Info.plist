@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Minimum supported macOS version.
+         The kill switch relies on NetworkExtension's
+         `includeAllNetworks` / `excludeLocalNetworks` flags, which
+         Apple introduced in macOS 14 (Sonoma). On macOS 13 and older
+         those flags are silent no-ops: the app would appear to run
+         but deliver zero kill-switch protection. Rather than ship
+         that footgun, refuse installation below 14.0. The Swift
+         helper `hpn_vpn_manager_install_and_start` returns error -14
+         if this guard is ever bypassed (e.g. sideloaded). -->
+    <key>LSMinimumSystemVersion</key>
+    <string>14.0</string>
+
+    <!-- Reason shown to the user in the System Settings → Privacy &
+         Security panel when they are asked to approve the Packet
+         Tunnel System Extension. macOS displays this string in the
+         confirmation prompt ("App Name wants to add the system
+         extension <reason>"). Keep it short, factual, and tied to
+         the user-visible feature so the grant feels natural. -->
+    <key>NSSystemExtensionUsageDescription</key>
+    <string>HPN VPN needs to install a Network Extension to provide post-quantum encrypted VPN tunneling and kill-switch protection.</string>
+
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <true/>
+    <key>ITSEncryptionExportComplianceCode</key>
+    <string>81addfcf-f33b-4cbe-bb7c-16bb682f4bea</string>
+</dict>
+</plist>

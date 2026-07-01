@@ -1,0 +1,83 @@
+[package]
+name = "hpn-ui-windows"
+description = "HPN VPN Windows Desktop Client"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+publish = false
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+# Used to embed the SHA-256 of `resources/wintun.dll` as a compile-time
+# constant so the runtime loader can detect tampering. See `build.rs`.
+sha2 = "0.10"
+
+[dependencies]
+hpn-core = { workspace = true }
+hpn-client-core = { workspace = true }
+hpn-client-windows = { path = "../../hpn-client-windows" }
+
+# Tauri
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-shell = "2"
+tauri-plugin-notification = "2"
+# Audit H14: signed Tauri updater (minisign-format public key in
+# `tauri.conf.json` validates downloaded artefacts before the install
+# step runs).
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+
+# Async runtime
+tokio = { workspace = true }
+
+# Synchronization
+parking_lot = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+# Config
+dirs = "6"
+
+# UUID
+uuid = { workspace = true, features = ["v4"] }
+
+# Time
+chrono = "0.4"
+
+# Validation
+regex = "1"
+base64 = { workspace = true }
+
+# Secret zeroization (Tauri IPC password boundary — see CRED-1 in
+# `commands.rs::connect_with_auth`).
+zeroize = { workspace = true }
+
+# Cryptographic hash for runtime Wintun DLL integrity verification (BUN-1).
+sha2 = "0.10"
+
+# Direct Win32 bindings for `dpapi.rs` (DPAPI-encrypted profile store, audit
+# H10). We pin the same major as `hpn-client-windows` and explicitly list the
+# features we need so a future bump of the transitive `windows` dep cannot
+# silently break us. Without this declaration, `dpapi.rs` resolves the
+# `windows` crate transitively through `hpn-client-windows`, which is fragile
+# (a breaking change in `Win32_Security_Cryptography` between major versions
+# would compile-error here without warning).
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_Security_Cryptography",
+] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

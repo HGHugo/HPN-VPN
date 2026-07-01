@@ -1,0 +1,75 @@
+[package]
+name = "hpn-ui-macos"
+description = "HPN VPN macOS Desktop Client"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+publish = false
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+hpn-core = { workspace = true }
+hpn-client-core = { workspace = true }
+# NOTE: `hpn-client-macos` used to live here — it held the legacy
+# PF / scutil / IOKit path we shipped before migrating to
+# `NETunnelProviderManager`. With the NE-based tunnel, nothing in this
+# binary calls into that crate any more (verified by grep). Keeping it
+# as a runtime dependency only grew the binary and exposed ~2200 lines
+# of unused `netsh`/`pfctl`/`sc` command-runners to the attack surface.
+# The crate itself is still in the workspace so the out-of-tree CLI
+# target keeps building; to resurrect it here, re-add the line and
+# `use hpn_client_macos::...` where needed.
+
+# Tauri
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-shell = "2"
+tauri-plugin-notification = "2"
+# Audit H14: signed Tauri updater (minisign-format public key in
+# `tauri.conf.json` validates downloaded artefacts before the install
+# step runs).
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+
+# Async runtime
+tokio = { workspace = true }
+
+# Synchronization
+parking_lot = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+# Config
+dirs = "6"
+ctrlc = "3"
+
+# Security
+zeroize = { workspace = true }
+
+# UUID
+uuid = { workspace = true, features = ["v4"] }
+
+# Time
+chrono = "0.4"
+
+# Input validation
+regex = "1"
+base64 = { workspace = true }
+
+# PNG decoding (for custom tray icon)
+png = "0.17"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

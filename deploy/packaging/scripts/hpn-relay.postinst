@@ -1,0 +1,69 @@
+#!/bin/bash
+set -e
+
+# HPN Relay post-install script
+
+HPN_USER="hpn"
+HPN_GROUP="hpn"
+CONFIG_DIR="/etc/hpn"
+DATA_DIR="/var/lib/hpn"
+
+# 1. Create system user/group
+if ! getent group "$HPN_GROUP" > /dev/null 2>&1; then
+    groupadd --system "$HPN_GROUP"
+fi
+
+if ! getent passwd "$HPN_USER" > /dev/null 2>&1; then
+    useradd --system --gid "$HPN_GROUP" --no-create-home \
+        --home-dir "$DATA_DIR" --shell /usr/sbin/nologin "$HPN_USER"
+fi
+
+# 2. Create directories
+mkdir -p "$CONFIG_DIR" "$DATA_DIR"
+chown "$HPN_USER:$HPN_GROUP" "$DATA_DIR"
+chmod 750 "$DATA_DIR"
+
+# 3. Install config template
+if [ ! -f "$CONFIG_DIR/relay.toml" ]; then
+    cp "$CONFIG_DIR/relay.toml.example" "$CONFIG_DIR/relay.toml"
+    chown root:"$HPN_GROUP" "$CONFIG_DIR/relay.toml"
+    chmod 640 "$CONFIG_DIR/relay.toml"
+    echo "HPN: Config template installed at $CONFIG_DIR/relay.toml"
+    echo "HPN: Edit this file and set upstream_addr before starting."
+else
+    # Upgrade path: shipped relay.toml.example may contain new fields. The
+    # active /etc/hpn/relay.toml is never overwritten.
+    if ! cmp -s "$CONFIG_DIR/relay.toml.example" "$CONFIG_DIR/relay.toml" 2>/dev/null; then
+        echo "HPN: Existing $CONFIG_DIR/relay.toml preserved."
+        echo "HPN: Review $CONFIG_DIR/relay.toml.example for new config options."
+    fi
+fi
+
+# 4. Configure journald limits
+mkdir -p /etc/systemd/journald.conf.d
+if [ ! -f /etc/systemd/journald.conf.d/hpn.conf ]; then
+    cat > /etc/systemd/journald.conf.d/hpn.conf << 'EOF'
+[Journal]
+SystemMaxUse=500M
+RateLimitIntervalSec=30s
+RateLimitBurst=10000
+EOF
+    systemctl restart systemd-journald 2>/dev/null || true
+fi
+
+# 5. Enable systemd service
+systemctl daemon-reload
+systemctl enable hpn-relay.service > /dev/null 2>&1 || true
+
+echo ""
+echo "============================================================"
+echo "  HPN VPN Relay installed successfully"
+echo "============================================================"
+echo ""
+echo "  Next steps:"
+echo "    1. Edit $CONFIG_DIR/relay.toml (set upstream_addr)"
+echo "    2. sudo systemctl start hpn-relay"
+echo "    3. sudo journalctl -u hpn-relay -f"
+echo ""
+echo "  Documentation: https://hpn.hmsx.io/docs"
+echo ""

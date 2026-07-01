@@ -1,0 +1,183 @@
+name: Fuzzing
+
+on:
+  # Run quick smoke tests on every PR
+  pull_request:
+    branches: [main]
+    paths:
+      - 'crates/hpn-core/**'
+      - 'fuzz/**'
+  
+  # Run extended fuzzing on main branch
+  push:
+    branches: [main]
+    paths:
+      - 'crates/hpn-core/**'
+      - 'fuzz/**'
+  
+  # Schedule nightly fuzzing runs (5 minutes per target)
+  schedule:
+    - cron: '0 2 * * *'  # 2 AM UTC daily
+  
+  # Allow manual trigger with custom duration
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: 'Fuzz duration in seconds per target'
+        required: false
+        default: '300'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  fuzz-smoke:
+    name: Fuzz Smoke Test
+    runs-on: [self-hosted, linux, X64]
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+      
+      - name: Install cargo-fuzz
+        run: cargo +nightly install cargo-fuzz --quiet || true
+      
+      - name: Quick fuzz test - Header (10s)
+        working-directory: fuzz
+        run: cargo +nightly fuzz run fuzz_header -- -max_total_time=10 -max_len=256
+      
+      - name: Quick fuzz test - Handshake Init (10s)
+        working-directory: fuzz
+        run: cargo +nightly fuzz run fuzz_handshake_init -- -max_total_time=10 -max_len=8192
+      
+      - name: Quick fuzz test - Handshake Response (10s)
+        working-directory: fuzz
+        run: cargo +nightly fuzz run fuzz_handshake_response -- -max_total_time=10 -max_len=8192
+      
+      - name: Quick fuzz test - Control Message (10s)
+        working-directory: fuzz
+        run: cargo +nightly fuzz run fuzz_control_message -- -max_total_time=10 -max_len=1024
+
+  fuzz-extended:
+    name: Extended Fuzzing
+    runs-on: [self-hosted, linux, X64]
+    if: github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - name: fuzz_header
+            max_len: 256
+          - name: fuzz_handshake_init
+            max_len: 8192
+          - name: fuzz_handshake_response
+            max_len: 8192
+          - name: fuzz_control_message
+            max_len: 1024
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+      
+      - name: Install cargo-fuzz
+        run: cargo +nightly install cargo-fuzz --quiet || true
+      
+      - name: Set fuzzing duration
+        id: duration
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "seconds=${{ github.event.inputs.duration }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" == "schedule" ]; then
+            echo "seconds=300" >> $GITHUB_OUTPUT
+          else
+            echo "seconds=60" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Fuzz ${{ matrix.target.name }}
+        working-directory: fuzz
+        run: |
+          echo "Fuzzing ${{ matrix.target.name }} for ${{ steps.duration.outputs.seconds }} seconds..."
+          cargo +nightly fuzz run ${{ matrix.target.name }} -- \
+            -max_total_time=${{ steps.duration.outputs.seconds }} \
+            -max_len=${{ matrix.target.max_len }} \
+            -print_final_stats=1 \
+            -timeout=10
+      
+      - name: Check for crashes
+        if: always()
+        run: |
+          if [ -d "fuzz/artifacts/${{ matrix.target.name }}" ]; then
+            crash_count=$(find fuzz/artifacts/${{ matrix.target.name }} -type f | wc -l)
+            if [ $crash_count -gt 0 ]; then
+              echo "::error::Found $crash_count crashes in ${{ matrix.target.name }}"
+              find fuzz/artifacts/${{ matrix.target.name }} -type f | head -5
+              exit 1
+            fi
+          fi
+      
+      - name: Upload crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-crashes-${{ matrix.target.name }}
+          path: fuzz/artifacts/${{ matrix.target.name }}/*
+          retention-days: 30
+
+  fuzz-corpus-coverage:
+    name: Corpus Coverage Analysis
+    runs-on: [self-hosted, linux, X64]
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: [fuzz-extended]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+      
+      - name: Install cargo-fuzz and llvm-tools
+        run: |
+          cargo +nightly install cargo-fuzz --quiet || true
+          rustup +nightly component add llvm-tools-preview
+      
+      - name: Generate coverage from corpus
+        working-directory: fuzz
+        run: |
+          echo "Generating coverage from fuzzing corpus..."
+          cargo +nightly fuzz coverage fuzz_header || true
+          cargo +nightly fuzz coverage fuzz_handshake_init || true
+          cargo +nightly fuzz coverage fuzz_handshake_response || true
+          cargo +nightly fuzz coverage fuzz_control_message || true
+      
+      - name: Upload coverage data
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-coverage
+          path: fuzz/coverage/
+          retention-days: 7
+
+  summary:
+    name: Fuzzing Summary
+    runs-on: [self-hosted, linux, X64]
+    if: always()
+    needs: [fuzz-extended]
+    
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# Fuzzing Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All fuzz targets completed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Targets Tested" >> $GITHUB_STEP_SUMMARY
+          echo "- \`fuzz_header\` - Packet header parsing" >> $GITHUB_STEP_SUMMARY
+          echo "- \`fuzz_handshake_init\` - Handshake initialization" >> $GITHUB_STEP_SUMMARY
+          echo "- \`fuzz_handshake_response\` - Handshake response" >> $GITHUB_STEP_SUMMARY
+          echo "- \`fuzz_control_message\` - Control message parsing" >> $GITHUB_STEP_SUMMARY

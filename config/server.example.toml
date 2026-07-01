@@ -1,0 +1,192 @@
+# HPN VPN Server Configuration
+#
+# Performance is AUTO-DETECTED at runtime:
+# - CPU cores -> worker threads
+# - Kernel version -> io_uring or fallback
+# - NIC driver -> AF_XDP if supported
+# - Memory -> buffer sizes
+#
+# No tuning needed - just configure your network settings and go!
+
+[server]
+# Listen address for UDP connections
+listen_addr = "0.0.0.0:51820"
+
+# IPv4 address pool for clients (CIDR notation)
+# Clients will be assigned IPs from this range (starting at .2)
+ipv4_pool = "10.99.0.0/24"
+
+# Server's tunnel IP address (must be in the pool)
+server_tunnel_ip = "10.99.0.1"
+
+# Optional: IPv6 pool for dual-stack (PRO/ENTERPRISE only)
+# Uses ULA (Unique Local Address) range fd00::/8
+# ipv6_pool = "fd00:99::/64"
+# server_tunnel_ipv6 = "fd00:99::1"
+# dns_servers_v6 = ["fd00:99::1", "2001:4860:4860::8888"]
+
+# DNS servers to provide to clients
+dns_servers = ["10.99.0.1", "8.8.8.8"]
+
+# TUN device name
+tun_name = "hpn0"
+
+# MTU for the tunnel (1420 is safe for most networks)
+mtu = 1420
+
+# Session timeout in seconds (inactive sessions will be removed)
+session_timeout_secs = 180
+
+# Keepalive interval in seconds
+keepalive_interval_secs = 25
+
+# Logging policy
+# Set to false for no-logs runtime mode (server/relay stdout logs disabled)
+log_enabled = true
+
+# Maximum concurrent sessions. Bounded in practice by the size of your
+# configured IPv4 pool (you cannot assign more addresses than the pool
+# holds). Set to whatever your deployment needs.
+max_sessions = 1000
+
+# Enable NAT/masquerade for VPN traffic
+enable_nat = true
+
+# Network interface for NAT (auto-detected if not specified)
+# nat_interface = "eth0"
+
+# ============================================================================
+# Privilege Dropping (Security Hardening)
+# ============================================================================
+# After binding to privileged ports and creating TUN device, the server can
+# drop root privileges and run as a less privileged user/group.
+# This limits the impact of potential security vulnerabilities.
+#
+# Create a dedicated user:
+#   sudo useradd -r -s /bin/false hpn
+#
+# Uncomment to enable:
+# run_as_user = "hpn"
+# run_as_group = "hpn"
+
+# ============================================================================
+# Metrics Configuration
+# ============================================================================
+# Enable Prometheus metrics HTTP endpoint
+enable_metrics = false
+
+# Metrics HTTP listen address (localhost only for security)
+metrics_addr = "127.0.0.1:9100"
+
+# ============================================================================
+# Admin API Configuration
+# ============================================================================
+# Enable Admin REST API for session management
+# Endpoints:
+#   GET    /api/sessions      - List all sessions
+#   GET    /api/sessions/{id} - Get session details
+#   DELETE /api/sessions/{id} - Terminate a session
+#   GET    /api/stats         - Server statistics
+#   GET    /api/health        - Health check
+enable_admin_api = false
+
+# Admin API HTTP listen address (localhost only for security)
+# WARNING: Do NOT expose to public internet without authentication
+admin_addr = "127.0.0.1:9101"
+
+# Admin API authentication token (REQUIRED for sensitive endpoints)
+# Without this token, sensitive endpoints (/api/sessions, /api/stats, /api/license)
+# will return 403 Forbidden to prevent accidental exposure.
+# Generate a secure token: openssl rand -hex 32
+# admin_api_token = "your-secure-random-token-here"
+
+# ============================================================================
+# Post-Quantum Cryptography
+# ============================================================================
+# The server accepts BOTH security levels simultaneously (Level 3 and Level 5).
+# The client chooses which level to use at connection time:
+#   Level 3 (Standard) - ML-KEM-768 + ML-DSA-65 (~AES-192 equivalent)
+#   Level 5 (High)     - ML-KEM-1024 + ML-DSA-87 (~AES-256 equivalent)
+#
+# No server-side configuration needed — just provide keypairs for both levels.
+
+# ============================================================================
+# License Configuration (ML-DSA-65/87 Post-Quantum Signatures)
+# ============================================================================
+# License key (base64 encoded, signed with ML-DSA-65)
+# Without a license, server runs in FREE tier (10 sessions max)
+#
+# To generate a license:
+#   1. Generate master keypair ONCE: hpn-server license keygen
+#   2. Update MASTER_LICENSE_PUBLIC_KEY in src/license.rs with public key
+#   3. Store private key securely in web app (HSM/KMS)
+#   4. Generate licenses: hpn-server license generate --tier pro --org "Company" --days 365 --key master-private-key.hex
+#
+# Example (DO NOT USE - this is a placeholder):
+# license_key = "BASE64_ENCODED_ML_DSA_SIGNED_LICENSE"
+
+# License tiers:
+#   FREE       - 10 sessions, 100 Mbps/session, no IPv6, no relays
+#   PRO        - 100 sessions, 1 Gbps/session, IPv6, relays
+#   ENTERPRISE - Unlimited sessions, unlimited bandwidth, all features
+
+# ============================================================================
+# User Authentication (Optional)
+# ============================================================================
+# Enable server-side username/password authentication.
+# - users_db_path: SQLite database managed by `hpn-server user ...`
+# - require_auth: when true, clients WITHOUT valid credentials are rejected
+#
+# users_db_path = "/var/lib/hpn/users.db"
+# require_auth = true
+
+# ============================================================================
+# Server Keypairs
+# ============================================================================
+# Generate ALL keypairs with: hpn-server genkey --output server-keys.toml
+# The install script automatically appends all sections to this config.
+# KEEP THE SECRET KEYS SECURE!
+#
+# Four keypair sections are required for full functionality:
+#   [keypair_level3]     - ML-DSA-65 signing (Level 3 / Standard)
+#   [keypair_level5]     - ML-DSA-87 signing (Level 5 / High)
+#   [kem_keypair_level3] - Hybrid X25519+ML-KEM-768 for identity hiding (Level 3)
+#   [kem_keypair_level5] - Hybrid X25519+ML-KEM-1024 for identity hiding (Level 5)
+#
+# Signing keypairs are REQUIRED (server won't start without them).
+# KEM keypairs are OPTIONAL (identity hiding disabled if absent).
+#
+# Share with clients:
+#   "Server Public Key"     = signing public_key (from keypair_level3 or keypair_level5)
+#   "Server KEM Public Key" = KEM public_key (from kem_keypair_level3 or kem_keypair_level5)
+# ============================================================================
+
+[keypair_level3]
+# ML-DSA-65 signing keypair (Level 3 / Standard, ~AES-192 equivalent)
+secret_key = ""
+public_key = ""
+
+[keypair_level5]
+# ML-DSA-87 signing keypair (Level 5 / High, ~AES-256 equivalent)
+secret_key = ""
+public_key = ""
+
+# ============================================================================
+# Identity Hiding (Optional, Privacy Enhancement)
+# ============================================================================
+# These KEM keypairs enable identity hiding, which encrypts client handshake
+# initiation messages to prevent passive observers from fingerprinting clients.
+#
+# Without identity hiding: Observers can see the client's ephemeral public key
+# With identity hiding: Handshake init is encrypted to server's KEM public key
+# ============================================================================
+
+[kem_keypair_level3]
+# Hybrid X25519 + ML-KEM-768 keypair for Level 3 identity hiding
+secret_key = ""
+public_key = ""
+
+[kem_keypair_level5]
+# Hybrid X25519 + ML-KEM-1024 keypair for Level 5 identity hiding
+secret_key = ""
+public_key = ""
